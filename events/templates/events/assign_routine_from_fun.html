@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Create Fun Routine! | Mindset Playroom{% endblock %}
+
+{% block content %}
+<style>
+  .routine-details {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+  .routine-details img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+    margin-bottom: 15px;
+  }
+  .form-group {
+    margin-bottom: 15px;
+  }
+  .form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  .form-group select, .form-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .error-message {
+    color: red;
+    margin-top: 10px;
+  }
+  .success-message {
+    color: green;
+    margin-top: 10px;
+  }
+  .existing-settings {
+    margin-top: 20px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 5px;
+  }
+  #day-group {
+    display: none;
+  }
+</style>
+
+<div class="routine-details">
+  <h1>Add {{ routine.name }} to Routine (from {{ fun.name }})</h1>
+  {% if routine.photo %}
+    <img src="{{ routine.photo.url }}" alt="{{ routine.name }}">
+  {% endif %}
+  <p>{{ routine.instructions|safe }}</p>
+  <p><strong>Age Group:</strong> {{ routine.age_group }}</p>
+  <p><strong>Format:</strong> {{ routine.format_type }}</p>
+  <p><strong>Place:</strong> {{ routine.place }}</p>
+  <p><strong>Superpower:</strong> {{ routine.superpower }}</p>
+
+  {% if messages %}
+    {% for message in messages %}
+      <p class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %}">{{ message }}</p>
+    {% endfor %}
+  {% endif %}
+
+  {% if existing_assignment %}
+    <div class="existing-settings">
+      <h3>Current Routine Settings for {{ existing_assignment.kid.first_name }}</h3>
+      <p><strong>Frequency:</strong> {{ existing_assignment.get_frequency_display }}</p>
+      {% if existing_assignment.day %}
+        <p><strong>Day:</strong> {{ existing_assignment.day }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <h2>Add/Update Routine to Calendar</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="id_kid">Select Kid:</label>
+      {{ form.kid }}
+    </div>
+    <div class="form-group">
+      <label for="id_frequency">Frequency:</label>
+      {{ form.frequency }}
+    </div>
+    <div class="form-group" id="day-group">
+      <label for="id_day">Day:</label>
+      <input type="text" name="day" id="id_day" value="{{ form.day.value|default:'' }}" placeholder="For weekly: Monday, for monthly: 1-31">
+    </div>
+    <button type="submit">Save Routine</button>
+  </form>
+  <button onclick="window.close()">Cancel</button>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(function() {
+  $('#id_kid').on('change', function() {
+    var kid_id = $(this).val();
+    if (kid_id) {
+      // Reload page with kid_id for existing settings (popup-friendly)
+      window.location.href = window.location.pathname + '?kid_id=' + kid_id;
+    }
+  });
+  // Pre-select kid if provided in URL
+  {% if selected_kid_id %}
+    $('#id_kid').val('{{ selected_kid_id }}');
+  {% endif %}
+
+  // Dynamic day field based on frequency
+  function updateDayField() {
+    var frequency = $('#id_frequency').val();
+    if (frequency === 'daily') {
+      $('#day-group').hide();
+      $('#id_day').val('').prop('required', false);
+    } else {
+      $('#day-group').show();
+      $('#id_day').prop('required', true);
+      if (frequency === 'weekly') {
+        // Show select for weekly
+        $('#id_day').replaceWith('<select id="id_day" name="day"><option value="">Select Day</option><option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option><option value="Friday">Friday</option><option value="Saturday">Saturday</option><option value="Sunday">Sunday</option></select>');
+      } else if (frequency === 'monthly') {
+        // Show number input for monthly
+        $('#id_day').replaceWith('<input type="number" id="id_day" name="day" min="1" max="31" placeholder="1-31">');
+      }
+    }
+  }
+  updateDayField();  // Initial call
+  $('#id_frequency').on('change', updateDayField);
+});
+</script>
+{% endblock %}

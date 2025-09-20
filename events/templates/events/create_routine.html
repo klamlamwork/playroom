@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Create Routine | Mindset Playroom{% endblock %}
+
+{% block content %}
+<body>
+    <h1>Create Routine {% if five_min_fun %}from {{ five_min_fun.name }}{% endif %}</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create</button>
+    </form>
+    <a href="{% url 'event_list' %}">Cancel</a>
+</body>
+{% endblock %}

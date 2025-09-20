@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Signup | Mindset Playroom{% endblock %}
+
+{% block content %}
+
+<!--signup_step2.html-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Kids</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>  <!-- Add jQuery -->
+    <style>
+        .kid-form { margin-bottom: 20px; border: 1px solid #ccc; padding: 10px; }
+        .add-button { cursor: pointer; font-size: 20px; color: green; }
+        .remove-button { cursor: pointer; font-size: 20px; color: red; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <form method="post">
+        {% csrf_token %}
+        {{ formset.management_form }}  <!-- Required for formsets: TOTAL_FORMS, etc. -->
+
+        <div id="kid-forms-container">
+            {% for form in formset %}
+                <div class="kid-form" id="kid-form-{{ forloop.counter0 }}">  <!-- Add ID for easy indexing -->
+                    {{ form.as_p }}
+                    <span class="remove-button" onclick="removeForm(this)">- Remove</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <span id="add-kid" class="add-button">+ Add Kid</span>
+        <p>Add up to 5 kids.</p>
+
+        <button type="submit">Complete Signup</button>
+    </form>
+
+    <script>
+        $(document).ready(function() {
+            // Initial form count (subtract 1 for 0-based last index)
+            let formIdx = {{ formset.total_form_count|add:"-1" }};
+
+            // Hide remove button for the first form
+            if ($('.kid-form').length === 1) {
+                $('.kid-form .remove-button').hide();
+            }
+
+            // Add form on click
+            $('#add-kid').click(function() {
+                if ($('.kid-form').length >= 5) {
+                    alert("You can add up to 5 kids only.");
+                    return;
+                }
+
+                formIdx++;  // Increment for new form
+
+                // Clone the last form
+                let newForm = $('.kid-form:last').clone();
+
+                // Update indices in IDs and names
+                newForm.attr('id', 'kid-form-' + formIdx);
+                newForm.find('input, label').each(function() {
+                    let elem = $(this);
+                    if (elem.attr('name')) {
+                        elem.attr('name', elem.attr('name').replace(/-\d+-/, '-' + formIdx + '-'));
+                    }
+                    if (elem.attr('id')) {
+                        elem.attr('id', elem.attr('id').replace(/-\d+-/, '-' + formIdx + '-'));
+                    }
+                    if (elem.attr('for')) {
+                        elem.attr('for', elem.attr('for').replace(/-\d+-/, '-' + formIdx + '-'));
+                    }
+                    // Clear values (except hidden id, set to empty)
+                    if (elem.is('input') && elem.attr('type') !== 'hidden') {
+                        elem.val('');
+                    }
+                    if (elem.attr('name') && elem.attr('name').endsWith('-id')) {
+                        elem.val('');
+                    }
+                });
+
+                // Show remove button on new form
+                newForm.find('.remove-button').show();
+
+                // Append to container
+                $('#kid-forms-container').append(newForm);
+
+                // Update TOTAL_FORMS
+                $('#id_form-TOTAL_FORMS').val(formIdx + 1);  // formIdx is 0-based last, +1 for total
+            });
+
+            // Remove form on click (with re-indexing)
+            $(document).on('click', '.remove-button', function() {
+                if ($('.kid-form').length > 1) {
+                    $(this).closest('.kid-form').remove();
+                    updateFormIndices();  // Re-index remaining forms
+                } else {
+                    alert("You must have at least one kid.");
+                }
+            });
+
+            // Function to re-index all forms sequentially
+            function updateFormIndices() {
+                $('.kid-form').each(function(index) {
+                    let currentForm = $(this);
+                    currentForm.attr('id', 'kid-form-' + index);
+                    currentForm.find('input, label').each(function() {
+                        let elem = $(this);
+                        if (elem.attr('name')) {
+                            elem.attr('name', elem.attr('name').replace(/-\d+-/, '-' + index + '-'));
+                        }
+                        if (elem.attr('id')) {
+                            elem.attr('id', elem.attr('id').replace(/-\d+-/, '-' + index + '-'));
+                        }
+                        if (elem.attr('for')) {
+                            elem.attr('for', elem.attr('for').replace(/-\d+-/, '-' + index + '-'));
+                        }
+                    });
+                });
+
+                // Update TOTAL_FORMS to new count
+                $('#id_form-TOTAL_FORMS').val($('.kid-form').length);
+            }
+        });
+    </script>
+</body>
+</html>
+{% endblock %}

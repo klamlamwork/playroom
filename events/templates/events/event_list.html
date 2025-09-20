@@ -1,0 +1,113 @@
+
+<!-- events/templates/events/event_list.html -->
+{% extends "base.html" %}
+
+{% block title %}My Account | Mindset Playroom{% endblock %}
+
+{% block content %}
+
+
+<head>
+    <title>Join Activities | Empower both Caregivers & Kids!</title>
+    <!-- Add CSS if needed, e.g., for responsive list -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <style>
+      #events-map { height: 400px; margin-bottom: 1em; border-radius: 12px; border: 1px solid #eee;}
+    </style>
+</head>
+<body>
+    <h1>Join Activities | Let both Caregivers & Kids Thrive!</h1>
+    <p>Total Activities: {{ num_events }}</p>
+    <!-- Filters Form -->
+    <form method="get">
+        <div>
+            {{ filter_form.age_group.label_tag }}
+            {{ filter_form.age_group }}
+        </div>
+        <div>
+            {{ filter_form.format_type.label_tag }}
+            {{ filter_form.format_type }}
+        </div>
+        <div>
+            {{ filter_form.place.label_tag }}
+            {{ filter_form.place }}
+        </div>
+        <div>
+            {{ filter_form.superpower.label_tag }}
+            {{ filter_form.superpower }}
+        </div>
+        <button type="submit">Apply Filters</button>
+        <a href="{% url 'event_list' %}">Clear Filters</a>
+    </form>
+    
+    <ul class="event-grid">
+    {% for item in items %}
+    <li class="event-card">
+        {% if item.type == 'event' %}
+            <a href="{% url 'event_detail' item.slug %}" class="event-card-link">Go to detail</a>
+            {% if item.photo %}
+            <img src="{{ item.photo.url }}" class="event-card-photo" alt="{{ item.name }}">
+            {% else %}
+            <div class="event-card-photo" style="display:flex;align-items:center;justify-content:center;color:#c9c9d6;font-size:1.3em;">No Photo</div>
+            {% endif %}
+            <div class="event-card-content">
+            <div class="event-card-title">{{ item.name }} (Event)</div>
+            <div class="event-card-meta">{{ item.start_datetime|date:"M d, Y, H:i" }}</div>
+            <div class="event-card-meta">{{ item.location }}</div>
+            <div class="event-card-meta">Fee: ${{ item.fee }} | Tickets: {{ item.tickets_available }}</div>
+            {# Remove the event-card-actions/view button for card-only navigation #}
+            </div>
+        {% else %}
+            <a href="{% url 'five_min_fun_detail' item.slug %}" class="event-card-link">Go to detail</a>
+            {% if item.photo %}
+            <img src="{{ item.photo.url }}" class="event-card-photo" alt="{{ item.name }}">
+            {% else %}
+            <div class="event-card-photo" style="display:flex;align-items:center;justify-content:center;color:#c9c9d6;font-size:1.3em;">No Photo</div>
+            {% endif %}
+            <div class="event-card-content">
+            <div class="event-card-title">{{ item.name }} (5-Min Fun)</div>
+            <div class="event-card-meta">Created: {{ item.created_at|date:"M d, Y" }}</div>
+            <div class="event-card-meta">Instructions: {{ item.instructions|truncatewords:10 }}</div>
+            <div class="event-card-meta">Tags: {{ item.tags }}</div>
+            {# Remove the event-card-actions/view button for card-only navigation #}
+            </div>
+        {% endif %}
+    </li>
+
+
+    {% empty %}
+    <li>No items match the filters. <a href="{% url 'event_list' %}">Show all</a></li>
+    {% endfor %}
+    </ul>
+
+    <!-- MAP VIEW (only for Events) -->
+    <h2>Map View</h2>
+    <div id="events-map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Using JSON data safely from context
+        var eventMarkers = JSON.parse('{{ event_markers|escapejs }}');
+        var map = L.map('events-map').setView([49, -123], 10); // Set to reasonable default; adjust.
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        if(eventMarkers.length > 0){
+            var bounds = [];
+            eventMarkers.forEach(function(e){
+                if(e.lat && e.lng){
+                    var marker = L.marker([e.lat, e.lng]).addTo(map);
+                    marker.bindPopup("<b>" + e.name + "</b><br>" + e.location + "<br>" + e.start_datetime +
+                            '<br><a href="' + e.detail_url + '">Details</a>');
+                    bounds.push([e.lat, e.lng]);
+                }
+            });
+            if(bounds.length > 0){
+                map.fitBounds(bounds, {padding: [30, 30]});
+            }
+        }
+    </script>
+
+</body>
+{% endblock %}

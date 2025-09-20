@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Delete Routine: {{ routine.name }}</title>
+</head>
+<body>
+    <h1>Confirm Delete {{ routine.name }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Delete</button>
+    </form>
+    <a href="{% url 'vendor_dashboard' %}">Cancel</a>
+</body>
+</html>

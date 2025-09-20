@@ -1,0 +1,761 @@
+{% extends "base.html" %}
+
+{% block title %}My Account | Mindset Playroom{% endblock %}
+
+{% block content %}
+
+<!-- users/templates/users/my_account.html -->
+<style>
+.kid-calendar-table {
+  width: 100%;
+  min-width: 330px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 1em;
+}
+.kid-calendar-table th {
+  padding: 2px;
+  color: #666;
+  font-size: .98em;
+  font-weight: normal;
+  border-bottom: 1px solid #eee;
+  text-align: center;
+}
+.kid-calendar-table td {
+  vertical-align: top;
+  background: #fff;
+  height: 58px;
+  min-height: 48px;
+  border: 1px solid #eee;
+  position: relative;
+  padding: 3px 2px 2px 5px;
+  font-size: .98em;
+  word-break: break-word;
+}
+.kcal-day-label {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  font-size: 0.75em;
+  color: #aaa;
+  font-weight: 600;
+}
+.kcal-evt {
+  margin: 0 0 2px 0;
+  background: #e7f6e7;
+  color: #34603f;
+  font-size: .91em;
+  border-radius: 3px;
+  padding: 1px 3px 1px 3px;
+  cursor: pointer;
+  display: block;
+}
+.kid-avatar.selected {
+  outline: 3px solid #3989fa;
+  box-shadow: 0 2px 8px #bdd9ff;
+}
+@media (max-width:500px) {
+  .kid-calendar-table { font-size: .95em; min-width: 100%; }
+  .kid-calendar-table td { height: 36px; min-height: 28px; font-size: .91em; }
+}
+.kid-calendar-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
+/* Calendar Navigation Styles */
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 1.1em;
+  font-weight: bold;
+}
+.nav-arrow {
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+  color: #666;
+  padding: 0 10px;
+  touch-action: manipulation; /* For better touch */
+}
+.nav-arrow:hover, .nav-arrow:active {
+  color: #333;
+}
+.nav-arrow:disabled {
+  color: #ddd;
+  cursor: not-allowed;
+}
+.month-header {
+  text-align: center;
+  font-weight: bold;
+  margin: 10px 0 5px 0;
+  color: #333;
+  font-size: 1.1em;
+}
+/* Swipe support */
+.calendar-container {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y; /* Allow vertical scroll, but horizontal for swipe */
+}
+</style>
+
+<h1>My Account</h1>
+<!-- Display messages (errors or success) -->
+{% if messages %}
+  <ul style="list-style: none; padding: 0;">
+    {% for message in messages %}
+      <li{% if message.tags %} style="color: {% if 'error' in message.tags %}red{% else %}green{% endif %};"{% endif %}>{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<p>Name: {{ user.first_name }} {{ user.last_name }}</p>
+<p>Phone: {{ user.userprofile.phone_number }}</p>
+
+<h2>Caregivers:</h2>
+<div style="display: flex; gap: 24px; align-items: center; margin-top: 20px; margin-bottom: 32px;">
+  {% for cg in caregivers %}
+    <div class="caregiver-avatar" data-caregiver-id="{{ cg.id }}" style="text-align: center; cursor:pointer;">
+      {% if cg.avatar %}
+        <img src="{{ cg.avatar.url }}" style="width: 64px; height: 64px; border-radius: 50%;" />
+      {% else %}
+        <div style="width:64px;height:64px; border-radius:50%; background:#def; display:flex;align-items:center;justify-content:center; font-size:2em;">{{ cg.first_name|slice:":1" }}</div>
+      {% endif %}
+      <div style="margin-top:4px">{{ cg }}</div>
+    </div>
+  {% endfor %}
+  <div id="add-caregiver-btn" style="text-align: center; cursor:pointer;">
+    <div style="width:64px;height:64px; border-radius:50%; background:#f2f2f2; display:flex;align-items:center;justify-content:center; font-size:2em; color:#45a; margin:0 auto;">+</div>
+    <div style="margin-top:4px;color:#45a;">Add</div>
+  </div>
+</div>
+
+<div id="caregiver-edit-pane" style="margin-top: 40px; display: none;">
+  <h3>Edit Caregiver</h3>
+  <form method="post" id="caregiver-edit-form" enctype="multipart/form-data" action="">
+    {% csrf_token %}
+    <input type="hidden" name="caregiver_id" id="edit-caregiver-id" value="">
+    <label>First Name:
+      <input type="text" name="first_name" id="edit-caregiver-first-name" value="">
+    </label><br>
+    <label>Last Name:
+      <input type="text" name="last_name" id="edit-caregiver-last-name" value="">
+    </label><br>
+    <label>Phone:
+      <input type="text" name="phone_number" id="edit-caregiver-phone" value="">
+    </label><br>
+    <label>Current Avatar:</label>
+    <div id="edit-current-avatar" style="margin-bottom: 10px;"></div>
+    <label>Upload New Avatar:
+      <input type="file" name="avatar" id="edit-caregiver-avatar">
+    </label><br><br>
+    <button type="submit" id="caregiver-update-btn">Update</button>
+  </form>
+  <div id="caregiver-calendar-wrap" style="margin-top:32px;">
+    <h4>Events for <span id="calendar-caregiver-name"></span></h4>
+    <div class="kid-calendar-scroll">
+      <div class="calendar-container" id="caregiver-calendar-container">
+        <div class="calendar-nav">
+          <button class="nav-arrow" id="cg-prev-month">&lt;</button>
+          <span id="cg-month-year"></span>
+          <button class="nav-arrow" id="cg-next-month">&gt;</button>
+        </div>
+        <div id="caregiver-calendar"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>Kids:</h2>
+<div style="display: flex; gap: 24px; align-items: center; margin-top: 32px; margin-bottom: 32px;">
+  {% for kid in kids %}
+    <div class="kid-avatar" data-kid-id="{{ kid.id }}" style="text-align: center; cursor:pointer;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: #ddd; display:flex; align-items: center; justify-content: center; font-size: 2em; margin: 0 auto;">
+        {{ kid.first_name|slice:":1" }}
+      </div>
+      <div style="margin-top:4px">{{ kid.first_name }}</div>
+      <div style="margin-top:0; font-size:0.8em; color:#666;">Birthday: {{ kid.birthday }}</div>
+    </div>
+  {% endfor %}
+  <div id="add-kid-btn" style="text-align: center; cursor:pointer;">
+    <div style="width: 64px; height: 64px; border-radius: 50%; background: #f2f2f2; display:flex; align-items: center; justify-content: center; font-size: 2em; color: #45a; margin: 0 auto;">
+      +
+    </div>
+    <div style="margin-top:4px;color:#45a;">Add</div>
+  </div>
+</div>
+
+<div id="kid-edit-pane" style="margin-top: 40px; display: none;">
+  <h3>Edit Kid</h3>
+  <form method="post" id="kid-edit-form" action="">
+    {% csrf_token %}
+    <input type="hidden" name="kid_id" id="edit-kid-id" value="">
+    <label>Name:
+      <input type="text" name="first_name" id="edit-kid-name" value="">
+    </label><br>
+    <label>Birthday:
+      <input type="date" name="birthday" id="edit-kid-birthday" value="">
+    </label><br>
+    <button type="submit" id="update-kid-btn">Update</button>
+  </form>
+  <div id="kid-calendar-wrap" style="margin-top:32px;">
+    <h4>Events for <span id="calendar-kid-name"></span></h4>
+    <div class="kid-calendar-scroll">
+      <div class="calendar-container" id="kid-calendar-container">
+        <div class="calendar-nav">
+          <button class="nav-arrow" id="kid-prev-month">&lt;</button>
+          <span id="kid-month-year"></span>
+          <button class="nav-arrow" id="kid-next-month">&gt;</button>
+        </div>
+        <div id="kid-calendar"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="add-kid-modal-bg" style="display:none; position:fixed; z-index:2000; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.30);">
+  <div id="add-kid-modal" style="background:#fff; width:340px; padding:32px 20px 20px; border-radius:7px; margin:60px auto 0; position:relative; box-shadow:0 3px 24px #999; min-height:180px;">
+    <h3>Add Kid</h3>
+    <form method="post" id="add-kid-form" action="">
+      {% csrf_token %}
+      <label>Name:
+        <input type="text" name="first_name" id="add-kid-name" required>
+      </label><br>
+      <label>Birthday:
+        <input type="date" name="birthday" id="add-kid-birthday" required>
+      </label><br><br>
+      <button type="submit">Add</button>
+      <button type="button" id="cancel-add-kid" style="margin-left:8px;">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<div id="add-caregiver-modal-bg" style="display:none; position:fixed; z-index:2000; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.30);">
+  <div id="add-caregiver-modal" style="background:#fff; width:340px; padding:32px 20px 20px; border-radius:7px; margin:60px auto 0; position:relative; box-shadow:0 3px 24px #999; min-height:180px;">
+    <h3>Add Caregiver</h3>
+    <form method="post" id="add-caregiver-form" enctype="multipart/form-data" action="">
+      {% csrf_token %}
+      <input type="hidden" name="add_caregiver" value="true">
+      <label>First Name:
+        <input type="text" name="first_name" id="add-caregiver-first-name" required>
+      </label><br>
+      <label>Last Name:
+        <input type="text" name="last_name" id="add-caregiver-last-name">
+      </label><br>
+      <label>Phone Number:
+        <input type="text" name="phone_number" id="add-caregiver-phone-number">
+      </label><br>
+      <label>Avatar:
+        <input type="file" name="avatar" id="add-caregiver-avatar">
+      </label><br><br>
+      <button type="submit">Add</button>
+      <button type="button" id="cancel-add-caregiver" style="margin-left:8px;">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<div id="event-modal-bg" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:3000; background:rgba(0,0,0,0.35);">
+  <div id="event-modal" style="max-width:370px; width:92vw; margin:60px auto 0; background:#fff; border-radius:10px; box-shadow:0 3px 24px #777; padding:22px 18px 18px 18px; display:flex; flex-direction:column; position:relative;">
+    <button id="close-event-modal" type="button" style="position:absolute; right:14px; top:14px; border:none; background:none; font-size:1.6em; color:#666;">×</button>
+    <h3 id="evt-modal-title" style="font-size:1.15em; margin-top:0; margin-bottom:.3em"></h3>
+    <div style="font-size:.97em; color:#555;">
+      <div><b>When:</b> <span id="evt-modal-datetime"></span></div>
+      <div><b>Where:</b> <span id="evt-modal-location"></span></div>
+      <div id="evt-modal-desc" style="margin-top:.6em; white-space:pre-line;"></div>
+    </div>
+    <button id="mark-done-btn" style="margin-top:15px; background:#28a745; color:white; border:none; border-radius:5px; padding:8px 14px; cursor:pointer; display:none;">
+      Completed Today
+    </button>
+    <div id="mark-done-status" style="color:green; display:none; margin-top:8px;">Marked as completed!</div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+// Data from Django context (unchanged)
+var cgCompleted = {
+  {% for cg_id, comps in completed_events.items %}
+    {{ cg_id }}: [
+      {% for eid, day in comps %}
+        { event_id: {{ eid }}, date: "{{ day }}" }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]{% if not forloop.last %},{% endif %}
+  {% endfor %}
+};
+
+// Kid completions for ticks
+var kidCompleted = {
+  {% for kid_id, comps in kid_completed.items %}
+    {{ kid_id }}: [
+      {% for eid, day in comps %}
+        { event_id: {{ eid }}, date: "{{ day }}" }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]{% if not forloop.last %},{% endif %}
+  {% endfor %}
+};
+
+var kidsData = [
+  {% for kid in kids %}
+    {id: {{ kid.id }}, name: "{{ kid.first_name|escapejs }}", birthday: "{{ kid.birthday }}"}{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+var kidEvents = {
+  {% for k_id, events in kid_events.items %}
+    {{ k_id }}: [
+      {% for ev in events %}
+      {
+        id: {{ ev.id }},
+        date: "{{ ev.date }}",
+        name: "{{ ev.name|escapejs }}",
+        desc: "{{ ev.desc|escapejs }}",
+        start_time: "{{ ev.start_time|escapejs }}",
+        end_time: "{{ ev.end_time|escapejs }}",
+        location: "{{ ev.location|escapejs }}",
+        type: "{{ ev.type|escapejs }}"  // Ensure type is passed
+      }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]{% if not forloop.last %},{% endif %}
+  {% endfor %}
+};
+var caregiversData = [
+  {% for cg in caregivers %}
+    {id: {{ cg.id }}, first_name: "{{ cg.first_name|escapejs }}", last_name: "{{ cg.last_name|escapejs }}", phone: "{{ cg.phone_number|escapejs }}", avatar: "{% if cg.avatar %}{{ cg.avatar.url }}{% endif %}"}{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+var cgEvents = {
+  {% for cg_id, events in cg_events.items %}
+    {{ cg_id }}: [
+    {% for ev in events %}
+      {
+        id: {{ ev.id }},
+        date: "{{ ev.date }}",
+        name: "{{ ev.name|escapejs }}",
+        desc: "{{ ev.desc|escapejs }}",
+        start_time: "{{ ev.start_time|escapejs }}",
+        end_time: "{{ ev.end_time|escapejs }}",
+        location: "{{ ev.location|escapejs }}"
+      }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+    ]{% if not forloop.last %},{% endif %}
+  {% endfor %}
+};
+
+// Global for which CG is being shown
+var currentCG = null;
+var currentKid = null;
+
+// Track current displayed month/year for kid and caregiver
+var kidCurrentYear = null;
+var kidCurrentMonth = null;
+var cgCurrentYear = null;
+var cgCurrentMonth = null;
+
+// FIXED: Moved buildCalendar early (before load functions) for safety; removed loose 'table += ' snippet (syntax error causing disappear)
+function buildCalendar(year, month, events, completedList) {
+    var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    var start = new Date(year, month, 1);
+    var end = new Date(year, month+1, 0);
+    var eventsByDay = {};
+    (events || []).forEach(function(ev){
+        var parts = ev.date.split('-');
+        var evDate = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+        if (evDate.getFullYear() === year && evDate.getMonth() === month) {
+            var d = evDate.getDate();
+            if(!eventsByDay[d]) eventsByDay[d] = [];
+            eventsByDay[d].push(ev);
+        }
+    });
+    completedList = completedList || [];
+    var table = '<table class="kid-calendar-table"><tr>';
+    var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    days.forEach(function(d){ table += '<th>' + d + '</th>'; });
+    table += '</tr><tr>';
+    var dayOfWeek, day=1;
+    for(var i=0; i<start.getDay(); ++i) table += '<td></td>';
+    for(; day<=end.getDate(); ++day) {
+        dayOfWeek = (start.getDay() + day - 1) % 7;
+        table += '<td><span class="kcal-day-label">' + day + '</span>';
+        if(eventsByDay[day]) {
+            eventsByDay[day].forEach(function(ev){
+                var done = completedList.some(function(cx){
+                    return (String(cx.event_id) === String(ev.id)) && (cx.date === ev.date);
+                });
+                var evtType = ev.type || 'event';  // Default to 'event'
+                table += '<span class="kcal-evt"'
+                    + ' data-evt-title="' + ev.name + '"'
+                    + ' data-evt-id="' + ev.id + '"'
+                    + ' data-evt-type="' + evtType + '"'  // Pass type ('event' or 'routine')
+                    + ' data-evt-date="' + ev.date + '"'
+                    + ' data-evt-datetime="' + ev.start_time + ' — ' + ev.end_time + '"'
+                    + ' data-evt-location="' + (ev.location || "") + '"'
+                    + ' data-evt-desc="' + (ev.desc || "") + '"'
+                    + ' onclick="showEventModal(this)"'
+                    + '>'
+                    + (done
+                        ? '<span style="color:green; font-size:15px; vertical-align:middle;" title="Completed today">&#x2714;&nbsp;</span>'
+                        : ''
+                      )
+                    + ev.name
+                    + '</span>';
+            });
+        }
+        table += '</td>';
+        if (dayOfWeek === 6 && day != end.getDate()) table += '</tr><tr>';
+    }
+    for(var j=(end.getDay() + 1); j<=6; ++j) table += '<td></td>';
+    table += '</tr></table>';
+    return table;
+}
+
+function getCurrentYearMonth() {
+    var today = new Date();
+    return {year: today.getFullYear(), month: today.getMonth()};
+}
+
+function htmlEscape(str) {
+    if(!str) return '';
+    return str.replace(/&/g,"&amp;")
+              .replace(/</g,"&lt;")
+              .replace(/>/g,"&gt;")
+              .replace(/\"/g,"&quot;")
+              .replace(/'/g,"&#39;");
+}
+
+// Update month/year display and rebuild calendar for kid/caregiver
+function updateKidCalendar(year, month) {
+    var events = kidEvents[currentKid] || [];
+    var completedList = kidCompleted[currentKid] || [];
+    var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    $('#kid-month-year').text(monthNames[month] + ' ' + year);
+    $('#kid-calendar').html(buildCalendar(year, month, events, completedList));
+    kidCurrentYear = year;
+    kidCurrentMonth = month;
+}
+
+function updateCaregiverCalendar(year, month) {
+    var events = cgEvents[currentCG] || [];
+    var completedList = cgCompleted[currentCG] || [];
+    var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    $('#cg-month-year').text(monthNames[month] + ' ' + year);
+    $('#caregiver-calendar').html(buildCalendar(year, month, events, completedList));
+    cgCurrentYear = year;
+    cgCurrentMonth = month;
+}
+
+function loadKidCalendar(kidID) {
+    var kid = kidsData.find(function(obj){ return obj.id == kidID; });
+    if (kid) {
+        currentKid = kidID; currentCG = null;
+        $('#kid-edit-pane').show();
+        $('#caregiver-edit-pane').hide();
+        $('#edit-kid-id').val(kid.id);
+        $('#edit-kid-name').val(kid.name);
+        $('#calendar-kid-name').text(kid.name);
+        var ym = getCurrentYearMonth();
+        // Init current month/year
+        kidCurrentYear = ym.year;
+        kidCurrentMonth = ym.month;
+        updateKidCalendar(ym.year, ym.month);
+        setTimeout(function() {
+            $('#edit-kid-birthday').val(kid.birthday).trigger('change');
+        }, 50);
+        $('.kid-avatar').removeClass('selected');
+        $('.kid-avatar[data-kid-id="'+kidID+'"]').addClass('selected');
+        $('.caregiver-avatar').removeClass('selected');
+        localStorage.setItem('lastViewedType', 'kid');
+        localStorage.setItem('lastViewedKidID', kidID);
+    }
+}
+function loadCaregiverCalendar(cgID) {
+    var cg = caregiversData.find(item => item.id == cgID);
+    if (cg) {
+        currentCG = cgID; currentKid = null;
+        $('#caregiver-edit-pane').show();
+        $('#kid-edit-pane').hide();
+        $('#edit-caregiver-id').val(cg.id);
+        $('#edit-caregiver-first-name').val(cg.first_name);
+        $('#edit-caregiver-last-name').val(cg.last_name);
+        $('#edit-caregiver-phone').val(cg.phone);
+        $('#edit-current-avatar').html(cg.avatar ? '<img src="' + cg.avatar + '" style="width:100px; border-radius:5px;">' : 'None');
+        $('#calendar-caregiver-name').text(cg.first_name + (cg.last_name ? ' ' + cg.last_name : ''));
+        var ym = getCurrentYearMonth();
+        // Init current month/year
+        cgCurrentYear = ym.year;
+        cgCurrentMonth = ym.month;
+        updateCaregiverCalendar(ym.year, ym.month);
+        $('.caregiver-avatar').removeClass('selected');
+        $('.caregiver-avatar[data-caregiver-id="'+cgID+'"]').addClass('selected');
+        $('.kid-avatar').removeClass('selected');
+        localStorage.setItem('lastViewedType', 'caregiver');
+        localStorage.setItem('lastViewedCaregiverID', cgID);
+    }
+}
+
+// Navigation functions
+function navigateMonth(direction, isKid) {
+    if (isKid) {
+        kidCurrentMonth += direction;
+        if (kidCurrentMonth < 0) {
+            kidCurrentMonth = 11;
+            kidCurrentYear--;
+        } else if (kidCurrentMonth > 11) {
+            kidCurrentMonth = 0;
+            kidCurrentYear++;
+        }
+        updateKidCalendar(kidCurrentYear, kidCurrentMonth);
+    } else {
+        cgCurrentMonth += direction;
+        if (cgCurrentMonth < 0) {
+            cgCurrentMonth = 11;
+            cgCurrentYear--;
+        } else if (cgCurrentMonth > 11) {
+            cgCurrentMonth = 0;
+            cgCurrentYear++;
+        }
+        updateCaregiverCalendar(cgCurrentYear, cgCurrentMonth);
+    }
+}
+
+// FIXED: showEventModal with type routing (like caregiver logic) - unchanged
+window.showEventModal = function(elt) {
+    $('#evt-modal-title').text($(elt).data('evt-title'));
+    $('#evt-modal-datetime').text($(elt).data('evt-datetime'));
+    $('#evt-modal-location').text($(elt).data('evt-location'));
+    $('#evt-modal-desc').text($(elt).data('evt-desc'));
+    $('#mark-done-status').hide();
+    var evtType = $(elt).data('evt-type') || 'event';  // Default 'event'
+    var evtId = $(elt).data('evt-id');
+    var evtDate = $(elt).data('evt-date');
+    var inCaregiverMode = (currentCG !== null);
+    // Check if date is today or past before showing button
+    var today = new Date().toISOString().split('T')[0];  // YYYY-MM-DD
+    var isTodayOrPast = evtDate <= today;
+    if(inCaregiverMode){
+        // For caregivers: Use event completion (as before)
+        if (isTodayOrPast) {
+            $('#mark-done-btn').show()
+                .off('click')
+                .on('click', function(e){
+                    e.preventDefault();
+                    var cgID = currentCG;
+                    $.post('/events/mark_caregiver_event_completed/', {
+                        caregiver_id: cgID,
+                        event_id: evtId,
+                        event_date: evtDate,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    }, function(resp){
+                        if(resp.success){
+                            if (!cgCompleted[cgID]) cgCompleted[cgID] = [];
+                            cgCompleted[cgID].push({event_id: evtId, date: evtDate});
+                            loadCaregiverCalendar(cgID);
+                            $('#mark-done-status').show().delay(1000).fadeOut();
+                            setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
+                        } else {
+                            alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
+                        }
+                    }).fail(function(){
+                        alert("Request failed. Check connection.");
+                    });
+                });
+        } else {
+            $('#mark-done-btn').hide();
+        }
+    } else {
+        // For kids: Route by type (mirrors caregiver routing)
+        if (isTodayOrPast) {
+            $('#mark-done-btn').show()
+                .off('click')
+                .on('click', function(e){
+                    e.preventDefault();
+                    var kidID = currentKid;  // Current kid from loadKidCalendar
+                    var kidIds = [kidID];  // Single kid for now
+                    if (evtType === 'routine') {
+                        // For routines, post to routine endpoint
+                        $.post('/events/mark_kid_routine_completed/', {
+                            routine_instance_id: evtId,
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        }, function(resp){
+                            if(resp.success){
+                                if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
+                                kidCompleted[kidID].push({event_id: evtId, date: evtDate});
+                                loadKidCalendar(kidID);  // Reload to show tick
+                                $('#mark-done-status').show().delay(1000).fadeOut();
+                                setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
+                            } else {
+                                alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
+                            }
+                        }).fail(function(){
+                            alert("Request failed. Check connection.");
+                        });
+                    } else if (evtType === 'five_min_fun') {
+                        // For 5-Min Fun, post to five_min endpoint
+                        $.post('/events/mark_kid_five_min_fun_completed/', {
+                            five_min_fun_id: evtId,
+                            kid_ids: kidIds,  // Array [currentKid]
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        }, function(resp){
+                            if(resp.success){
+                                if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
+                                kidCompleted[kidID].push({event_id: evtId, date: evtDate});
+                                loadKidCalendar(kidID);
+                                $('#mark-done-status').show().delay(1000).fadeOut();
+                                setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
+                            } else {
+                                alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
+                            }
+                        }).fail(function(){
+                            alert("Request failed. Check connection.");
+                        });
+                    } else {
+                        // For events (including 5-min-play Events), post to event endpoint
+                        $.post('/events/mark_kid_event_completed/', {
+                            event_id: evtId,
+                            kid_ids: kidIds,
+                            event_date: evtDate,
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        }, function(resp){
+                            if(resp.success){
+                                if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
+                                kidCompleted[kidID].push({event_id: evtId, date: evtDate});
+                                loadKidCalendar(kidID);
+                                $('#mark-done-status').show().delay(1000).fadeOut();
+                                setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
+                            } else {
+                                alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
+                            }
+                        }).fail(function(){
+                            alert("Request failed. Check connection.");
+                        });
+                    }
+                });
+        } else {
+            $('#mark-done-btn').hide();
+        }
+    }
+    $('#event-modal-bg').fadeIn(90);
+};
+
+$(function() {
+    // Kid navigation buttons
+    $('#kid-prev-month').on('click', function() {
+        navigateMonth(-1, true);
+    });
+    $('#kid-next-month').on('click', function() {
+        navigateMonth(1, true);
+    });
+
+    // Caregiver navigation buttons
+    $('#cg-prev-month').on('click', function() {
+        navigateMonth(-1, false);
+    });
+    $('#cg-next-month').on('click', function() {
+        navigateMonth(1, false);
+    });
+
+    // Swipe support for kid calendar
+    var kidTouchStartX = 0;
+    var kidTouchEndX = 0;
+    $('#kid-calendar-container').on('touchstart', function(e) {
+        kidTouchStartX = e.originalEvent.changedTouches[0].screenX;
+    });
+    $('#kid-calendar-container').on('touchend', function(e) {
+        kidTouchEndX = e.originalEvent.changedTouches[0].screenX;
+        handleSwipe(kidTouchStartX, kidTouchEndX, true);
+    });
+
+    // Swipe support for caregiver calendar
+    var cgTouchStartX = 0;
+    var cgTouchEndX = 0;
+    $('#caregiver-calendar-container').on('touchstart', function(e) {
+        cgTouchStartX = e.originalEvent.changedTouches[0].screenX;
+    });
+    $('#caregiver-calendar-container').on('touchend', function(e) {
+        cgTouchEndX = e.originalEvent.changedTouches[0].screenX;
+        handleSwipe(cgTouchStartX, cgTouchEndX, false);
+    });
+
+    // Handle swipe gesture
+    function handleSwipe(startX, endX, isKid) {
+        var swipeThreshold = 50;  // Min pixels for swipe
+        var diff = startX - endX;
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0) {
+                // Swipe left: next month
+                navigateMonth(1, isKid);
+            } else {
+                // Swipe right: prev month
+                navigateMonth(-1, isKid);
+            }
+        }
+    }
+
+    $('.kid-avatar').on('click', function(){
+        var kidID = $(this).data('kid-id');
+        loadKidCalendar(kidID);
+    });
+    $('.caregiver-avatar').on('click', function(){
+        var cgID = $(this).data('caregiver-id');
+        loadCaregiverCalendar(cgID);
+    });
+
+    var lastType = localStorage.getItem('lastViewedType');
+    if (lastType === 'caregiver') {
+        var lastCG = localStorage.getItem('lastViewedCaregiverID');
+        if (lastCG && caregiversData.some(cg => cg.id == lastCG)) {
+            loadCaregiverCalendar(Number(lastCG));
+        } else if (caregiversData.length) {
+            loadCaregiverCalendar(caregiversData[0].id);
+        } else if (kidsData.length) {
+            loadKidCalendar(kidsData[0].id);
+        }
+    } else {
+        var lastKid = localStorage.getItem('lastViewedKidID');
+        if (lastKid && kidsData.some(k => k.id == lastKid)) {
+            loadKidCalendar(Number(lastKid));
+        } else if (kidsData.length) {
+            loadKidCalendar(kidsData[0].id);
+        } else if (caregiversData.length) {
+            loadCaregiverCalendar(caregiversData[0].id);
+        }
+    }
+
+    $('#add-kid-btn').on('click', function(){
+        $('#add-kid-form')[0].reset();
+        $('#add-kid-modal-bg').fadeIn(100);
+        $('#add-kid-name').focus();
+    });
+    $('#cancel-add-kid').on('click', function(){
+        $('#add-kid-modal-bg').fadeOut(100);
+    });
+    $('#add-kid-modal-bg').on('click', function(e){
+        if(e.target === this) $(this).fadeOut(100);
+    });
+
+    $('#add-caregiver-btn').on('click', function(){
+        $('#add-caregiver-form')[0].reset();
+        $('#add-caregiver-modal-bg').fadeIn(100);
+        $('#add-caregiver-first-name').focus();
+    });
+    $('#cancel-add-caregiver').on('click', function(){
+        $('#add-caregiver-modal-bg').fadeOut(100);
+    });
+    $('#add-caregiver-modal-bg').on('click', function(e){
+        if(e.target === this) $(this).fadeOut(100);
+    });
+
+    $('#close-event-modal').on('click', function() {
+        $('#event-modal-bg').fadeOut(90);
+    });
+    $('#event-modal-bg').on('click', function(e){
+        if(e.target === this) $('#event-modal-bg').fadeOut(90);
+    });
+});
+</script>
+
+{% endblock %}

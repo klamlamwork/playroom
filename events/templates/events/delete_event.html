@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Event | Mindset Playroom{% endblock %}
+
+{% block content %}
+
+<head><title>Delete {{ event.name }}</title></head>
+<body>
+    <h1>Delete Event: {{ event.name }}</h1>
+    <p>Are you sure? This will deactivate the event (registrations preserved).</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Yes, Deactivate</button>
+    </form>
+    <a href="{% url 'vendor_dashboard' %}">Cancel</a>
+</body>
+{% endblock %}

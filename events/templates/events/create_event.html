@@ -1,0 +1,108 @@
+
+<!-- events/templates/events/create_event.html -->
+{% extends "base.html" %}
+
+{% block title %}Create Activity | Mindset Playroom{% endblock %}
+
+{% block content %}
+
+<head>
+    <title>Create Event</title>
+    <!-- Add CSS/JS for datetime picker if needed -->
+    <style>
+        #suggestions {
+            position: absolute;
+            border: 1px solid #ccc;
+            background: white;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: inherit; /* Match input width */
+        }
+        #suggestions div {
+            padding: 8px;
+            cursor: pointer;
+        }
+        #suggestions div:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Create New Event</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create Event</button>
+    </form>
+    <a href="{% url 'vendor_dashboard' %}">Back to Vendor Dashboard</a>
+
+    <script>
+        const locationInput = document.getElementById('id_location');
+        const latInput = document.getElementById('id_latitude');
+        const lonInput = document.getElementById('id_longitude');
+        const suggestionsDiv = document.createElement('div');
+        suggestionsDiv.id = 'suggestions';
+        locationInput.parentNode.style.position = 'relative'; // For positioning
+        locationInput.parentNode.appendChild(suggestionsDiv);
+
+        let timeout;
+        locationInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            suggestionsDiv.innerHTML = '';
+            const query = this.value.trim();
+            if (query.length < 3) return;
+            timeout = setTimeout(() => {
+                fetchSuggestions(query);
+            }, 300);
+        });
+
+        async function fetchSuggestions(query) {
+            const url = 'https://nominatim.openstreetmap.org/search';
+            const params = new URLSearchParams({
+                q: query,
+                format: 'json',
+                addressdetails: 1,
+                limit: 5
+            });
+            try {
+                const response = await fetch(`${url}?${params}`, {
+                    headers: {
+                        'User-Agent': 'playroom (klamlamwork@gmail.com)' // Replace with your details
+                    }
+                });
+                if (!response.ok) throw new Error('Network error');
+                const data = await response.json();
+                displaySuggestions(data);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function displaySuggestions(suggestions) {
+            suggestionsDiv.innerHTML = '';
+            if (suggestions.length === 0) return;
+            suggestions.forEach(sug => {
+                const div = document.createElement('div');
+                div.textContent = sug.display_name;
+                div.dataset.lat = sug.lat;
+                div.dataset.lon = sug.lon;
+                div.addEventListener('click', () => {
+                    locationInput.value = sug.display_name;
+                    latInput.value = sug.lat;
+                    lonInput.value = sug.lon;
+                    suggestionsDiv.innerHTML = '';
+                });
+                suggestionsDiv.appendChild(div);
+            });
+        }
+
+        // Hide suggestions on click outside
+        document.addEventListener('click', (e) => {
+            if (!locationInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                suggestionsDiv.innerHTML = '';
+            }
+        });
+    </script>
+</body>
+{% endblock %}

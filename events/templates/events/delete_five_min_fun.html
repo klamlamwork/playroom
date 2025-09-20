@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Delete 5-Min Fun: {{ five_min_fun.name }}</title>
+</head>
+<body>
+    <h1>Confirm Deactivation: {{ five_min_fun.name }}</h1>
+    <p>Are you sure you want to deactivate this 5-Min Fun?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Yes, Deactivate</button>
+    </form>
+    <a href="{% url 'vendor_dashboard' %}">Cancel</a>
+</body>
+</html>

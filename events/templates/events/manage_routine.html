@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Routine | Mindset Playroom{% endblock %}
+
+{% block content %}
+<body>
+    <h1>Manage {{ routine.name }}</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Update</button>
+    </form>
+    <a href="{% url 'vendor_dashboard' %}">Back to Dashboard</a>
+</body>
+{% endblock %}

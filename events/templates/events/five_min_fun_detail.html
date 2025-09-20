@@ -1,0 +1,156 @@
+
+
+{% extends "base.html" %}
+
+{% block title %} Build Fun Routines! | Mindset Playroom{% endblock %}
+
+{% block content %}
+<!-- events/templates/events/five_min_fun_detail.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ five_min_fun.name }} - 5-Min Fun Detail</title>
+    <style>
+        .complete-btn {
+            display: inline-flex;
+            align-items: center;
+            background: #f2f2f2;
+            color: #333;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        .complete-btn.completed {
+            background: #28a745;
+            color: white;
+        }
+        .complete-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            margin-right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .complete-btn.completed .complete-circle {
+            border-color: white;
+            background: transparent;
+        }
+        .complete-btn.completed .complete-circle::before {
+            content: '✔';
+            font-size: 14px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ five_min_fun.name }}</h1>
+    {% if five_min_fun.photo %}
+        <img src="{{ five_min_fun.photo.url }}" alt="{{ five_min_fun.name }}" style="max-width: 100%;">
+    {% endif %}
+    <p><b>Instructions:</b> {{ five_min_fun.instructions }}</p>
+    {% if five_min_fun.audio %}
+        <audio controls>
+            <source src="{{ five_min_fun.audio.url }}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    {% endif %}
+    <p><b>Age Group:</b> {{ selected_ages }}</p>
+    <p><b>Format:</b> {{ five_min_fun.get_format_type_display }}</p>
+    <p><b>Place:</b> {{ five_min_fun.get_place_display }}</p>
+    <p><b>Superpower:</b> {{ selected_powers }}</p>
+    <p><b>Tags:</b> {{ five_min_fun.tags }}</p>
+
+    
+    <!-- Completed Button for 5-Min Fun 
+    {% if can_complete_today %}
+        <button id="complete-btn" class="complete-btn">
+            <span class="complete-circle"></span> Completed
+        </button>
+    {% else %}
+        <button class="complete-btn completed" disabled>
+            <span class="complete-circle"></span> Completed
+        </button>
+    {% endif %}
+-->
+    <!-- NEW: Add to Routine Button -->
+    {% if assigned_routines.exists %}
+        <h3>Assigned Routines - Add to Your Kid's Routine</h3>
+        {% for routine in assigned_routines %}
+            <button onclick="openRoutinePopup({{ routine.id }}, '{{ five_min_fun.id }}')">
+                Add {{ routine.name }} to Routine
+            </button><br><br>
+        {% endfor %}
+    {% else %}
+        <p>No routines assigned to this 5-Min Fun.</p>
+    {% endif %}
+    
+    <!-- Completed Modal Popup -->
+    <div id="complete-modal-bg" style="display:none; position:fixed; z-index:2000; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.30);">
+        <div id="complete-modal" style="background:#fff; width:340px; padding:32px 20px 20px; border-radius:7px; margin:60px auto 0; position:relative; box-shadow:0 3px 24px #999; min-height:180px;">
+            <h3>Mark Completed for Today</h3>
+            <form id="complete-form">
+                {% csrf_token %}
+                {% for kid in available_kids %}
+                    <label><input type="checkbox" name="kid_ids" value="{{ kid.id }}"> {{ kid.first_name }}</label><br>
+                {% endfor %}
+                <button type="button" id="submit-complete">Mark</button>
+                <button type="button" id="cancel-complete" style="margin-left:8px;">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+    $(function() {
+        $('#complete-btn').on('click', function(){
+            $('#complete-modal-bg').fadeIn(100);
+        });
+        $('#cancel-complete').on('click', function(){
+            $('#complete-modal-bg').fadeOut(100);
+        });
+        $('#complete-modal-bg').on('click', function(e){
+            if(e.target === this) $(this).fadeOut(100);
+        });
+        $('#submit-complete').on('click', function(){
+            var kidIds = [];
+            $('input[name="kid_ids"]:checked').each(function(){
+                kidIds.push($(this).val());
+            });
+            if(kidIds.length === 0){
+                alert("Select at least one kid.");
+                return;
+            }
+            $('#submit-complete').prop('disabled', true);  // Disable to prevent double-click
+            $.post('/events/mark_kid_five_min_fun_completed/', {
+                five_min_fun_id: {{ five_min_fun.id }},
+                kid_ids: kidIds,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            }, function(resp){
+                if(resp.success){
+                    alert(resp.message || "Marked as completed!");
+                    $('#complete-modal-bg').fadeOut(100);
+                    location.reload();  // Reload to update button/available kids
+                } else {
+                    alert("Failed: " + (resp.error || "Unknown error"));
+                    $('#submit-complete').prop('disabled', false);  // Re-enable on failure
+                }
+            }).fail(function(){
+                alert("Request failed. Check connection.");
+                $('#submit-complete').prop('disabled', false);  // Re-enable on fail
+            });
+        });
+    });
+    function openRoutinePopup(routine_id, fun_id) {
+        var url = "{% url 'assign_routine_from_fun' 0 0 %}".replace('0/0/', fun_id + '/' + routine_id + '/');
+        window.open(url, 'routine_popup', 'width=600,height=700,scrollbars=yes,resizable=yes');
+    }
+    </script>
+    <a href="{% url 'event_list' %}">Back to List</a>
+</body>
+
+{% endblock %}

@@ -1,0 +1,425 @@
+
+<!--templates/base.html-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mindset Playroom{% endblock %}</title>
+    <!-- Google Fonts: Quicksand -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+
+    <style>
+      body {
+        font-family: 'Quicksand', Arial, sans-serif;
+        margin: 0; padding: 0;
+background: 
+  url('data:image/svg+xml;utf8,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fade" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.15"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0.12"/></linearGradient></defs><rect width="100%" height="100%" fill="%23B84A39"/><path d="M0 120 Q 180 60 400 100 T 800 120 T 1400 80 L 1400 300 L 0 300 Z" fill="%23B2BDA6"/><path d="M0 220 Q 220 200 600 250 T 1400 170 L 1400 400 L 0 400 Z" fill="%23E2725B"/><path d="M0 320 Q 300 350 650 310 T 1400 340 L 1400 600 L 0 600 Z" fill="%23D9A441"/><path d="M0 400 Q 250 470 900 400 T 1400 460 L 1400 900 L 0 900 Z" fill="%237B875B"/><path d="M0 560 Q 200 600 900 560 T 1400 780 L 1400 1000 L 0 1000 Z" fill="%23E3D9C6"/><path d="M0 700 Q 260 780 1200 840 T 1400 900 L 1400 1100 L 0 1100 Z" fill="%234C7977"/><path d="M0 800 Q 220 900 1200 900 T 1400 1100 L 1400 1500 L 0 1500 Z" fill="%23A7A6A2"/><rect width="100%" height="100%" fill="url(%23fade)"/></svg>')
+  no-repeat top center fixed;
+
+       background-size: cover;
+        min-height: 100vh;
+      }
+      header {
+        /* existing styles ... */
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+        header, footer {
+          background: rgb(191, 122, 90); /* earthy background */
+          color: #f0ecec; /* hi fant */
+          padding: 25px 32px;
+          transition: background 0.4s ease, color 0.4s ease;
+        }
+
+        header.header-inverse {
+          background: #ffffff00;
+          color: rgb(208, 131, 116); /* earthy color for text */
+        }
+        header a, footer a {
+          color: #f0ecec;
+          margin-right: 18px;
+          text-decoration: none;
+          font-weight: 600;
+          transition: color 0.4s;
+        }
+
+        header a:hover, footer a:hover {
+          text-decoration: underline;
+          color: #958f75;
+        }
+        header.header-inverse a:hover,
+        footer.header-inverse a:hover {
+          color: #446030;
+        }
+
+        /* When header is inverted: links match the header-inverse text color */
+        header.header-inverse a {
+          color: #f6f7f7;
+        }
+        footer.header-inverse a {
+          color: rgb(188, 154, 139);
+        }
+
+      footer {
+        font-size: 1em;
+        text-align: center;
+        border-top: 2px solid rgba(0,0,0,0.08);
+        margin-top: 30px;
+        border-radius: 0 0 20px 20px;
+      }
+      main {
+        padding: 38px 24px 42px 24px;
+        min-height: 70vh;
+        max-width: 990px;
+        margin: 32px auto 0 auto;
+        background: rgba(255,255,255,0.98);
+        border-radius: 14px;
+        box-shadow: 0 4px 28px #dfdfe8a7;
+      }
+      a {
+        color: #B84A39;
+        text-decoration: none; /* Removes underline */
+      }
+      a:hover {
+        color: #a76b3d; /* Optional: Change color on hover to match your theme */
+      }
+      button {
+        margin: 15px 10px 15px 0;
+        display: inline-block;
+        padding: 10px 25px; /* Default padding */
+        font-size: 1em;
+        font-weight: 600;
+        text-align: center;
+        border: none;
+        border-radius: 8px; /* Rounded corners */
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.2s ease; /* Smooth hover effects */
+        background: #2E4C3A; /* Default primary color from your theme */
+        color: #fff; /* White text */
+        text-decoration: none; /* No underline */
+      }
+
+      button:hover {
+        background: #ce5340; /* Darker on hover */
+        transform: translateY(-2px); /* Slight lift for UX */
+      }
+
+      button:active {
+        transform: translateY(0); /* Reset on click */
+      }
+
+      /* Optional: .btn class for explicit use or variations (e.g., on <a> tags) */
+      .btn {
+        /* Inherits from global button styles; add specifics here if needed */
+      }
+
+      .btn-secondary {
+        background: #c4683b; /* Earthy secondary color */
+        color: #f0ecec;
+      }
+      .btn-secondary:hover {
+        background: #a76b3d;
+      }
+      
+      @media (max-width: 850px) {
+        main {
+          padding: 16px 4vw 22px 4vw;
+          margin:20px 4vw;
+        }
+        header, footer {
+          padding:15px 4vw;
+        }
+        button {
+          padding: 8px 16px;
+          font-size: 0.9em;
+        }
+      }
+
+        /* Example overrides */
+        /* Override for a specific button by ID */
+        #special-button {
+          background: #958f75; /* Custom color */
+          padding: 12px 24px; /* Larger size */
+        }
+
+        /* Override for buttons in a specific section (e.g., event cards) */
+        .event-card-actions button {
+          padding: 6px 18px; /* Smaller padding */
+          background: #E2725B; /* Different color */
+        }
+      
+      .event-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+            margin: 36px 0 18px 0;
+            padding: 0;
+            list-style: none;
+        }
+       .event-card {
+        position: relative;
+        cursor: pointer;
+        /* everything else as before */
+        }
+        .event-card-link {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        /* covers entire card */
+        text-indent: -9999px;
+        background: rgba(255,255,255,0); /* transparent */
+        }
+        .event-card:hover {
+        box-shadow: 0 8px 32px #8e92ce34;
+        border-color: #c3bbe1;
+        transform: translateY(-4px) scale(1.024);
+        }
+        .event-card * {
+        z-index: 1;
+        }
+
+        .event-card-photo {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            background: #e5e5e5;
+            border-bottom: 1.5px solid #eee;
+            box-shadow: 0 2px 8px #ececf8;
+        }
+        .event-card-content {
+            padding: 18px 18px 0 18px;
+            flex: 1 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+        .event-card-title {
+            font-size: 1.23em;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #211853;
+        }
+        .event-card-meta {
+            font-size: 0.96em;
+            color: #444b6b;
+            margin-bottom: 6px;
+        }
+        .event-card-actions {
+            margin-top: 8px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .event-card-actions a, .event-card-actions button {
+            background: #242582;
+            color: #fff;
+            font-weight: 600;
+            padding: 6px 18px;
+            border-radius: 8px;
+            border: none;
+            text-decoration: none;
+            transition: background .12s;
+            font-size: 1em;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+        .event-card-actions a:hover {
+            background: #4837c7;
+            text-decoration: underline;
+        }
+      /* Dropdown for user greeting */
+      .user-dropdown {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        margin-left: 20px;
+      }
+      .user-dropdown span {
+        color: #f0ecec;
+        font-weight: bold;
+      }
+      .user-dropdown .arrow {
+        display: inline-block;
+        margin-left: 5px;
+        transition: transform 0.3s;
+      }
+      .user-dropdown.active .arrow {
+        transform: rotate(180deg);
+      }
+      .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background: #fff;
+        min-width: 120px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        z-index: 1;
+        border-radius: 4px;
+      }
+      .dropdown-content a {
+        color: #333;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+      }
+      .dropdown-content a:hover {
+        background: #f1f1f1;
+      }
+      .user-dropdown.active .dropdown-content {
+        display: block;
+      }
+
+  /* Global unification for single-select dropdowns (<select>) */
+      select {
+        margin: 10px 3px;
+        width: 50%; /* Full width for consistency */
+        padding: 10px 15px; /* Comfortable padding */
+        font-size: 1em;
+        border: 1px solid #ccc; /* Subtle border */
+        border-radius: 8px; /* Rounded corners to match buttons */
+        background: #fff; /* White background */
+        color: #333; /* Dark text */
+        cursor: pointer;
+        appearance: none; /* Remove default arrow for custom styling */
+        background-image: url('data:image/svg+xml;utf8,<svg fill="%23242582" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>'); /* Custom dropdown arrow in your primary color */
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 20px;
+        transition: border-color 0.3s ease; /* Smooth focus effect */
+      }
+
+      select:focus {
+        border-color: #242582; /* Highlight with primary color on focus */
+        outline: none; /* Remove default outline */
+        box-shadow: 0 0 5px rgba(36, 37, 130, 0.3); /* Subtle glow */
+      }
+
+      select option {
+        padding: 10px; /* Padding for options */
+      }
+
+      /* Global unification for multi-select checkboxes (CheckboxSelectMultiple widget) */
+      /* Targets the <ul> container Django generates */
+      .checkbox-select-multiple {
+        list-style: none; /* Remove bullets */
+        padding: 0;
+        margin: 0;
+      }
+
+      .checkbox-select-multiple li {
+        margin-bottom: 10px; /* Spacing between items */
+        display: flex;
+        align-items: center;
+      }
+
+      .checkbox-select-multiple input[type="checkbox"] {
+        margin-right: 10px; /* Space between checkbox and label */
+        width: 18px; /* Larger checkbox for touch-friendliness */
+        height: 18px;
+        accent-color: #242582; /* Checkbox color in your primary theme */
+        cursor: pointer;
+      }
+
+      .checkbox-select-multiple label {
+        font-size: 1em;
+        color: #333; /* Label text color */
+        cursor: pointer;
+      }
+
+      /* Hover and checked states for better UX */
+      .checkbox-select-multiple input[type="checkbox"]:hover {
+        box-shadow: 0 0 5px rgba(36, 37, 130, 0.3); /* Subtle hover glow */
+      }
+
+      .checkbox-select-multiple input[type="checkbox"]:checked + label {
+        font-weight: bold; /* Bold label when checked */
+        color: #242582; /* Primary color for selected */
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        select {
+          padding: 8px 12px; /* Smaller on mobile */
+          font-size: 0.9em;
+        }
+        .checkbox-select-multiple li {
+          margin-bottom: 8px;
+        }
+      }
+
+      /* Overrides example: Add a custom class in forms.py for specific fields */
+      .custom-dropdown {
+        border-color: #c4683b; /* Earthy override color */
+        background-color: #f9f9f9; /* Light background */
+      }
+      .signout-link {
+        color: rgb(199, 91, 91) !important;
+      }
+
+
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header>
+      <nav style="display: flex; align-items: center;">
+        <a href="/">Home</a>
+        <a href="{% url 'event_list' %}">Activites</a>
+        <a href="{% url 'routine_list' %}">Routines</a>  <!-- NEW: Added Routines link -->
+        {% if user.is_authenticated %}
+          {% if user.userprofile.role == 'vendor' %}
+            <a href="{% url 'vendor_dashboard' %}">My Dashboard</a>
+          {% else %}
+            <a href="{% url 'my_account' %}">My Playroom</a>
+          {% endif %}
+          <div class="user-dropdown">
+            <span>Hi, {{ user.first_name }} <span class="arrow">▼</span></span>
+            <div class="dropdown-content">
+              <a href="{% url 'logout' %}" class="signout-link">Sign out</a>
+            </div>
+          </div>
+        {% else %}
+          <a href="{% url 'login' %}">Sign in</a>
+          <a href="{% url 'signup_step1' %}">Sign up</a>
+          <a href="{% url 'become_vendor' %}">Become a Mindset Training Provider</a>
+        {% endif %}
+      </nav>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+      &copy; {{ now|date:"Y" }} Mindset Playroom &middot; Crafted with ❤️
+    </footer>
+</body>
+</html>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const header = document.querySelector('header');
+    // On first load, use the inverse (opposite) colors
+    header.classList.add('header-inverse');
+    
+    window.addEventListener('scroll', function() {
+      if (window.scrollY > 40) { // adjust 40px as needed
+        header.classList.remove('header-inverse');
+      } else {
+        header.classList.add('header-inverse');
+      }
+    });
+
+    // Dropdown toggle
+    const dropdown = document.querySelector('.user-dropdown');
+    if (dropdown) {
+      dropdown.addEventListener('click', function() {
+        this.classList.toggle('active');
+      });
+    }
+  });
+</script>

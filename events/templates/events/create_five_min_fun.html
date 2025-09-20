@@ -1,0 +1,24 @@
+
+<!--playroom/events/templates/events/create_five_min_fun.html -->
+{% extends "base.html" %}
+
+{% block title %}Create 5-Min Fun | Mindset Playroom{% endblock %}
+
+{% block content %}
+<body>
+    <h1>Create 5-Min Fun</h1>
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create</button>
+    </form>
+    <a href="{% url 'vendor_dashboard' %}">Back to Dashboard</a>
+</body>
+{% endblock %}

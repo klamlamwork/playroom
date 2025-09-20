@@ -1,0 +1,24 @@
+
+<!--playroom/templates/homepage.html-->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Welcome to Playroom{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h1>Public Homepage</h1>
+        <p>Welcome to Playroom! This is your public landing page.</p>
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Not a user yet?</h3>
+                <a href="{% url 'signup_step1' %}" class="btn btn-primary">Sign Up</a>
+            </div>
+            <div class="col-md-6">
+                <h3>Returning user?</h3>
+                <a href="{% url 'login' %}" class="btn btn-secondary">Login</a>
+            </div>
+        </div>
+        <!-- Add public previews, like featured events if you want -->
+    </div>
+{% endblock %}

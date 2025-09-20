@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.name }} | Mindset Playroom{% endblock %}
+
+{% block content %}
+
+<!-- events/templates/events/event_detail.html -->
+<h1>{{ event.name }}</h1>
+<p>{{ event.description }}</p>
+{% if event.photo %}
+  <img src="{{ event.photo.url }}" alt="{{ event.name }}" style="max-width: 100%;">
+{% endif %}
+<p><b>Format:</b> {{ event.get_format_type_display }}</p>  <!-- AMENDED: Changed 'routine' to 'event' -->
+<p><b>Age Group:</b> {{ selected_ages }}</p>
+<p><b>Place:</b> {{ event.get_place_display }}</p>  <!-- AMENDED: Changed 'routine' to 'event' -->
+<p><b>Superpower:</b> {{ selected_powers }}</p>
+<p><b>Fee:</b> ${{ event.fee }}</p>
+
+{% if event.latitude and event.longitude %}
+  <!-- Add map view here if you have JS for it (e.g., Google Maps) -->
+  <div id="map" style="height: 300px;"></div>
+{% endif %}
+<p><b>Tickets Left:</b> {{ tickets_left }}</p>
+
+{% if already_registered %}
+  <p>You are already registered for this event.</p>
+{% else %}
+  {% if tickets_left > 0 %}
+    <h2>Register</h2>
+    <form method="post">
+      {% csrf_token %}
+      {% if show_kids %}
+        <h3>Select Kids:</h3>
+        {% for kid in kids %}
+          <label><input type="checkbox" name="kids" value="{{ kid.id }}"> {{ kid.first_name }}</label><br>
+        {% endfor %}
+      {% endif %}
+      <h3>Select Caregivers:</h3>
+      {% for cg in caregivers %}
+        <label><input type="checkbox" name="caregivers" value="{{ cg.id }}"> {{ cg.first_name }} {{ cg.last_name }}</label><br>
+      {% endfor %}
+      <button type="submit">Register</button>
+    </form>
+  {% else %}
+    <p>No tickets left.</p>
+  {% endif %}
+{% endif %}
+
+<!-- Completed Today for 5-min Plays -->
+{% if can_complete_today %}
+  <h2>Mark as Completed Today</h2>
+  <button id="complete-today-btn" style="background:#28a745; color:white; border:none; border-radius:5px; padding:8px 14px; cursor:pointer;">Completed Today</button>
+{% endif %}
+
+<!-- Completed Modal Popup -->
+<div id="complete-modal-bg" style="display:none; position:fixed; z-index:2000; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.30);">
+  <div id="complete-modal" style="background:#fff; width:340px; padding:32px 20px 20px; border-radius:7px; margin:60px auto 0; position:relative; box-shadow:0 3px 24px #999; min-height:180px;">
+    <h3>Mark Completed for Today</h3>
+    <form id="complete-form">
+      {% csrf_token %}
+      {% for kid in available_kids %}
+        <label><input type="checkbox" name="kid_ids" value="{{ kid.id }}"> {{ kid.first_name }}</label><br>
+      {% endfor %}
+      <button type="button" id="submit-complete">Mark</button>
+      <button type="button" id="cancel-complete" style="margin-left:8px;">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(function() {
+  $('#complete-today-btn').on('click', function(){
+    $('#complete-modal-bg').fadeIn(100);
+  });
+  $('#cancel-complete').on('click', function(){
+    $('#complete-modal-bg').fadeOut(100);
+  });
+  $('#complete-modal-bg').on('click', function(e){
+    if(e.target === this) $(this).fadeOut(100);
+  });
+  $('#submit-complete').on('click', function(){
+    var kidIds = [];
+    $('input[name="kid_ids"]:checked').each(function(){
+      kidIds.push($(this).val());
+    });
+    if(kidIds.length === 0){
+      alert("Select at least one kid.");
+      return;
+    }
+    $('#submit-complete').prop('disabled', true);  // Disable to prevent double-click
+    $.post('/events/mark_kid_event_completed/', {
+      event_id: {{ event.id }},
+      kid_ids: kidIds,
+      csrfmiddlewaretoken: '{{ csrf_token }}'
+    }, function(resp){
+      if(resp.success){
+        alert(resp.message || "Marked as completed!");
+        $('#complete-modal-bg').fadeOut(100);
+        location.reload();  // Reload to update button/available kids
+      } else {
+        alert("Failed: " + (resp.error || "Unknown error"));
+        $('#submit-complete').prop('disabled', false);  // Re-enable on failure
+      }
+    }).fail(function(){
+      alert("Request failed. Check connection.");
+      $('#submit-complete').prop('disabled', false);  // Re-enable on fail
+    });
+  });
+});
+</script>
+
+{% endblock %}
