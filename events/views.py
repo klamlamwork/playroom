@@ -53,7 +53,7 @@ def create_event(request):
         messages.error(request, "Profile not found. Please complete signup.")
         return redirect('vendor_dashboard')
     if request.method == 'POST':
-        form = EventCreateForm(request.POST, request.FILES)
+        form = EventCreateForm(request.POST)
         if form.is_valid():
             event = form.save(commit=False)
             event.vendor = request.user
@@ -132,7 +132,7 @@ def manage_event(request, event_id):
         registration_count = tickets_registered
     tickets_left = event.tickets_available - tickets_registered
     if request.method == 'POST':
-        form = EventUpdateForm(request.POST, request.FILES, instance=event)
+        form = EventUpdateForm(request.POST, instance=event)
         if form.is_valid():
             event = form.save(commit=False)
             event.vendor = request.user
@@ -336,7 +336,7 @@ def create_five_min_fun(request):
         messages.error(request, "Profile not found. Please complete signup.")
         return redirect('vendor_dashboard')
     if request.method == 'POST':
-        form = FiveMinFunCreateForm(request.POST, request.FILES, vendor=request.user)
+        form = FiveMinFunCreateForm(request.POST, vendor=request.user)
         if form.is_valid():
             five_min_fun = form.save(commit=False)
             five_min_fun.vendor = request.user
@@ -359,7 +359,7 @@ def manage_five_min_fun(request, five_min_fun_id):
         messages.error(request, "You are not approved to manage 5-Min Fun. Contact superadmin for access.")
         return redirect('vendor_dashboard')
     if request.method == 'POST':
-        form = FiveMinFunUpdateForm(request.POST, request.FILES, instance=five_min_fun, vendor=request.user)
+        form = FiveMinFunUpdateForm(request.POST, instance=five_min_fun, vendor=request.user)
         if form.is_valid():
             five_min_fun = form.save(commit=False)
             five_min_fun.vendor = request.user
@@ -454,7 +454,7 @@ def mark_kid_five_min_fun_completed(request):
 # Generate RoutineInstances based on frequency (MVP: next 30 days)
 def generate_routine_instances(assignment, kid):
     today = date.today()
-    end_date = today + timedelta(days=30)  # MVP limit
+    end_date = today + timedelta(days=365)  # MVP limit
     # Delete future instances (date >= today) for this SPECIFIC assignment and kid to prevent duplicates, keep past ones
     RoutineInstance.objects.filter(assignment=assignment, kid=kid, date__gte=today).delete()
     if assignment.frequency == 'daily':
@@ -485,7 +485,7 @@ def create_routine(request):
         messages.error(request, "You are not approved to create Routines. Contact superadmin for access.")
         return redirect('vendor_dashboard')
     if request.method == 'POST':
-        form = RoutineCreateForm(request.POST, request.FILES)
+        form = RoutineCreateForm(request.POST)
         if form.is_valid():
             routine = form.save(commit=False)
             routine.vendor = request.user
@@ -509,7 +509,7 @@ def manage_routine(request, routine_id):
         messages.error(request, "You are not approved to manage Routines. Contact superadmin for access.")
         return redirect('vendor_dashboard')
     if request.method == 'POST':
-        form = RoutineUpdateForm(request.POST, request.FILES, instance=routine)
+        form = RoutineUpdateForm(request.POST, instance=routine)
         if form.is_valid():
             routine = form.save(commit=False)
             routine.vendor = request.user

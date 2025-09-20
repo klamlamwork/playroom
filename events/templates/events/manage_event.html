@@ -1,36 +1,31 @@
+
+<!-- events/templates/events/manage_event.html -->
+<!-- events/templates/events/manage_event.html -->
 {% extends "base.html" %}
 
-{% block title %}My Account | Mindset Playroom{% endblock %}
+{% block title %}Manage Event | Mindset Playroom{% endblock %}
 
 {% block content %}
 
-
-<head>
-    <title>Manage Event: {{ event.name }}</title>
-    <style>
-        #suggestions {
-            position: absolute;
-            border: 1px solid #ccc;
-            background: white;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            width: inherit; /* Match input width */
-        }
-        #suggestions div {
-            padding: 8px;
-            cursor: pointer;
-        }
-        #suggestions div:hover {
-            background: #f0f0f0;
-        }
-    </style>
-</head>
-<body>
     <h1>Manage Event: {{ event.name }}</h1>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form.as_p }}
+        {{ form.name.label_tag }} {{ form.name }}<br>
+        {{ form.start_datetime.label_tag }} {{ form.start_datetime }}<br>
+        {{ form.description.label_tag }} {{ form.description }}<br>
+        <label for="id_photo">Photo:</label>
+        <button type="button" id="uploadWidget">Upload Photo</button>
+        {{ form.photo }}  <!-- Keep the original text input for URL, visible for manual edit -->
+        <br>
+        {{ form.end_datetime.label_tag }} {{ form.end_datetime }}<br>
+        {{ form.fee.label_tag }} {{ form.fee }}<br>
+        {{ form.location.label_tag }} {{ form.location }}<br>
+        {{ form.tags.label_tag }} {{ form.tags }}<br>
+        {{ form.age_groups.label_tag }} {{ form.age_groups }}<br>
+        {{ form.format_type.label_tag }} {{ form.format_type }}<br>
+        {{ form.place.label_tag }} {{ form.place }}<br>
+        {{ form.super_powers.label_tag }} {{ form.super_powers }}<br>
+        {{ form.tickets_available.label_tag }} {{ form.tickets_available }}<br>
         <button type="submit">Update Event</button>
     </form>
 
@@ -112,6 +107,26 @@
                 suggestionsDiv.innerHTML = '';
             }
         });
+
+        // Cloudinary Upload Widget Integration
+        document.addEventListener('DOMContentLoaded', function() {
+            const myWidget = cloudinary.createUploadWidget({
+                cloudName: 'dvrbpkbr7',  // Replace with your Cloudinary cloud name
+                uploadPreset: 'playroom_upload',  // Replace with your unsigned upload preset name
+                sources: ['local', 'url', 'camera'],
+                multiple: false,
+                resourceType: 'image'
+            }, (error, result) => {
+                if (!error && result && result.event === "success") {
+                    const uploadedUrl = result.info.secure_url;
+                    document.getElementById('id_photo').value = uploadedUrl;
+                    console.log("Uploaded photo URL:", uploadedUrl);
+                }
+            });
+
+            document.getElementById('uploadWidget').addEventListener('click', function() {
+                myWidget.open();
+            }, false);
+        });
     </script>
-</body>
 {% endblock %}

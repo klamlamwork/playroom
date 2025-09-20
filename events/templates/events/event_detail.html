@@ -1,14 +1,13 @@
-{% extends "base.html" %}
-
-{% block title %}{{ event.name }} | Mindset Playroom{% endblock %}
-
-{% block content %}
 
 <!-- events/templates/events/event_detail.html -->
+{% extends "base.html" %}
+{% block title %}My Account | Mindset Playroom{% endblock %}
+{% block content %}
+
 <h1>{{ event.name }}</h1>
 <p>{{ event.description }}</p>
 {% if event.photo %}
-  <img src="{{ event.photo.url }}" alt="{{ event.name }}" style="max-width: 100%;">
+  <img src="{{ event.photo }}" alt="{{ event.name }}" style="max-width: 100%;">
 {% endif %}
 <p><b>Format:</b> {{ event.get_format_type_display }}</p>  <!-- AMENDED: Changed 'routine' to 'event' -->
 <p><b>Age Group:</b> {{ selected_ages }}</p>

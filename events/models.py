@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.utils.text import slugify
 
-# NEW: Shared models for multi-select (Age/Super only)
+# Shared models for multi-select (Age/Super only)
 class AgeGroup(models.Model):
     name = models.CharField(max_length=20, unique=True)
     def __str__(self):
@@ -33,7 +33,7 @@ class Event(models.Model):
     start_datetime = models.DateTimeField()
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
-    photo = models.ImageField(upload_to='event_photos/', blank=True, null=True)
+    photo = models.URLField(blank=True, null=True)
     end_datetime = models.DateTimeField()
     fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)])
     location = models.TextField()
@@ -99,7 +99,7 @@ class KidEventCompletion(models.Model):
 class FiveMinFun(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
-    photo = models.ImageField(upload_to='five_min_fun_photos/', blank=True, null=True)
+    photo = models.URLField(blank=True, null=True)
     instructions = models.TextField()
     audio = models.FileField(upload_to='five_min_fun_audio/', blank=True, null=True)
     tags = models.CharField(max_length=255, blank=True)
@@ -135,12 +135,12 @@ class KidFiveMinFunCompletion(models.Model):
     def __str__(self):
         return f"{self.kid} completed {self.five_min_fun} on {self.date_completed}"
 
-# NEW: Vendor Routine Model
+# Vendor Routine Model
 class Routine(models.Model):
     vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='routines', limit_choices_to={'userprofile__role': 'vendor'})
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
-    photo = models.ImageField(upload_to='routine_photos/', blank=True, null=True)
+    photo = models.URLField(blank=True, null=True)
     instructions = models.TextField()
     age_groups = models.ManyToManyField(AgeGroup, blank=True)  # Multi
     format_type = models.CharField(max_length=20, choices=FORMAT_CHOICES, default='workshop')  # Single

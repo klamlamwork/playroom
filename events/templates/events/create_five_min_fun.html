@@ -5,7 +5,6 @@
 {% block title %}Create 5-Min Fun | Mindset Playroom{% endblock %}
 
 {% block content %}
-<body>
     <h1>Create 5-Min Fun</h1>
     {% if messages %}
         <ul>
@@ -16,9 +15,42 @@
     {% endif %}
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form.as_p }}
+        {{ form.name.label_tag }} {{ form.name }}<br>
+        <label for="id_photo">Photo:</label>
+        <button type="button" id="uploadWidget">Upload Photo</button>
+        {{ form.photo }}<br>
+        {{ form.instructions.label_tag }} {{ form.instructions }}<br>
+        {{ form.audio.label_tag }} {{ form.audio }}<br>
+        {{ form.tags.label_tag }} {{ form.tags }}<br>
+        {{ form.age_groups.label_tag }} {{ form.age_groups }}<br>
+        {{ form.format_type.label_tag }} {{ form.format_type }}<br>
+        {{ form.place.label_tag }} {{ form.place }}<br>
+        {{ form.super_powers.label_tag }} {{ form.super_powers }}<br>
+        {{ form.routines.label_tag }} {{ form.routines }}<br>
         <button type="submit">Create</button>
     </form>
     <a href="{% url 'vendor_dashboard' %}">Back to Dashboard</a>
-</body>
+
+    <script>
+        // Cloudinary Upload Widget Integration
+        document.addEventListener('DOMContentLoaded', function() {
+            const myWidget = cloudinary.createUploadWidget({
+                cloudName: 'dvrbpkbr7',  // Replace with your Cloudinary cloud name
+                uploadPreset: 'playroom_upload',  // Replace with your unsigned upload preset name
+                sources: ['local', 'url', 'camera'],
+                multiple: false,
+                resourceType: 'image'
+            }, (error, result) => {
+                if (!error && result && result.event === "success") {
+                    const uploadedUrl = result.info.secure_url;
+                    document.getElementById('id_photo').value = uploadedUrl;
+                    console.log("Uploaded photo URL:", uploadedUrl);
+                }
+            });
+
+            document.getElementById('uploadWidget').addEventListener('click', function() {
+                myWidget.open();
+            }, false);
+        });
+    </script>
 {% endblock %}

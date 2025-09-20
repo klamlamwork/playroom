@@ -1,21 +1,10 @@
 
 <!-- events/templates/events/event_list.html -->
 {% extends "base.html" %}
-
-{% block title %}My Account | Mindset Playroom{% endblock %}
-
+{% block title %}Join Activities | Empower both Caregivers & Kids!{% endblock %}
 {% block content %}
 
 
-<head>
-    <title>Join Activities | Empower both Caregivers & Kids!</title>
-    <!-- Add CSS if needed, e.g., for responsive list -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <style>
-      #events-map { height: 400px; margin-bottom: 1em; border-radius: 12px; border: 1px solid #eee;}
-    </style>
-</head>
-<body>
     <h1>Join Activities | Let both Caregivers & Kids Thrive!</h1>
     <p>Total Activities: {{ num_events }}</p>
     <!-- Filters Form -->
@@ -46,7 +35,7 @@
         {% if item.type == 'event' %}
             <a href="{% url 'event_detail' item.slug %}" class="event-card-link">Go to detail</a>
             {% if item.photo %}
-            <img src="{{ item.photo.url }}" class="event-card-photo" alt="{{ item.name }}">
+            <img src="{{ item.photo }}" class="event-card-photo" alt="{{ item.name }}">  <!-- AMENDED: Removed .url since photo is now a URL string -->
             {% else %}
             <div class="event-card-photo" style="display:flex;align-items:center;justify-content:center;color:#c9c9d6;font-size:1.3em;">No Photo</div>
             {% endif %}
@@ -60,7 +49,7 @@
         {% else %}
             <a href="{% url 'five_min_fun_detail' item.slug %}" class="event-card-link">Go to detail</a>
             {% if item.photo %}
-            <img src="{{ item.photo.url }}" class="event-card-photo" alt="{{ item.name }}">
+            <img src="{{ item.photo }}" class="event-card-photo" alt="{{ item.name }}">
             {% else %}
             <div class="event-card-photo" style="display:flex;align-items:center;justify-content:center;color:#c9c9d6;font-size:1.3em;">No Photo</div>
             {% endif %}
@@ -85,7 +74,7 @@
     <div id="events-map"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Using JSON data safely from context
+        // Using JSON data safely from context from event_markers
         var eventMarkers = JSON.parse('{{ event_markers|escapejs }}');
         var map = L.map('events-map').setView([49, -123], 10); // Set to reasonable default; adjust.
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -109,5 +98,8 @@
         }
     </script>
 
-</body>
 {% endblock %}
+
+
+
+

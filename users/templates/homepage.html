@@ -1,181 +1,12 @@
 
 <!--playroom/templates/homepage.html-->
 {% extends 'base.html' %}
-
 {% block title %}Mindset Playroom - Home{% endblock %}
-
-{% block extra_head %}
-<head>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<style>
-  /* Hero section mimicking buildlegends.com */
-  .hero {
-background: 
-  url('data:image/svg+xml;utf8,<svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fade" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="%23ffffff" stop-opacity="0.15"/><stop offset="100%" stop-color="%23ffffff" stop-opacity="0.12"/></linearGradient></defs><rect width="100%" height="100%" fill="%23B84A39"/><path d="M0 120 Q 180 60 400 100 T 800 120 T 1400 80 L 1400 300 L 0 300 Z" fill="%23B2BDA6"/><path d="M0 220 Q 220 200 600 250 T 1400 170 L 1400 400 L 0 400 Z" fill="%23E2725B"/><path d="M0 320 Q 300 350 650 310 T 1400 340 L 1400 600 L 0 600 Z" fill="%23D9A441"/><path d="M0 400 Q 250 470 900 400 T 1400 460 L 1400 900 L 0 900 Z" fill="%237B875B"/><path d="M0 560 Q 200 600 900 560 T 1400 780 L 1400 1000 L 0 1000 Z" fill="%23E3D9C6"/><path d="M0 700 Q 260 780 1200 840 T 1400 900 L 1400 1100 L 0 1100 Z" fill="%234C7977"/><path d="M0 800 Q 220 900 1200 900 T 1400 1100 L 1400 1500 L 0 1500 Z" fill="%23A7A6A2"/><rect width="100%" height="100%" fill="url(%23fade)"/></svg>')
-  no-repeat top center fixed;
-
-    color: #fff;
-    text-align: center;
-    padding: 100px 20px;
-    position: relative;
-  }
-  .hero::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
-  .hero-content {
-    position: relative;
-    z-index: 1;
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  .hero h1 {
-    font-size: 3em;
-    margin-bottom: 20px;
-  }
-  .hero p {
-    font-size: 1.5em;
-    margin-bottom: 30px;
-  }
-  .cta-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-  }
-  .cta {
-    background: #2E4C3A;
-    color: #fff;
-    padding: 12px 24px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: bold;
-  }
-  .cta:hover {
-    background: #E2725B;
-  }
-
-  /* Features section #e2dada */
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 18px;
-    padding: 30px 10px;
-    text-align: center;
-  }
-  .feature-card {
-    background: #ebe4e4f8;
-    padding: 35px 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  }
-  .feature-card img {
-    width: 100px;
-    height: 80px;
-    margin-bottom: 15px;
-  }
-  .feature-card h3 {
-    font-size: 1.5em;
-    margin-bottom: 10px;
-  }
-
-  /* Icon color for Font Awesome inside feature cards */
-.feature-card i {
-  color: #2E4C3A;
-  margin-bottom: 15px;
-  transition: color 0.3s, transform 0.3s;
-}
-.feature-card h3, p {
-  color:#2E4C3A
-}
-
-
-/* Make the entire card "zoom" on hover */
-.feature-card {
-  transition: transform 0.3s, box-shadow 0.3s;
-  cursor: pointer;
-}
-
-.feature-card:hover {
-  transform: scale(1.06);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-  z-index: 1;
-}
-
-/* (Optional) Make the icon even more vibrant on hover */
-.feature-card:hover i {
-  color: #1C3023; /* slightly darker green, or keep same for less effect */
-  transform: scale(1.12);
-}
-
-
-  /* Value section */
-  .value-section {
-    display: flex;
-    align-items: center;
-    padding: 50px 20px;
-    gap: 30px;
-  }
-  .value-section img {
-    max-width: 50%;
-    border-radius: 10px;
-  }
-  .value-content {
-    flex: 1;
-  }
-  .value-content h2 {
-    font-size: 2em;
-    margin-bottom: 15px;
-  }
-  .value-section p{
-    margin-bottom: 40px;
-  }
-
-  /* Bottom CTA */
-  .bottom-cta {
-    text-align: center;
-    padding: 50px 50px 80px 50px;
-    background: #f0f0f0;
-  }
-  .bottom-cta h2 {
-    font-size: 2em;
-    margin-bottom: 30px;
-  }
-
-  /* Mobile responsiveness */
-  @media (max-width: 768px) {
-    .hero {
-      padding: 60px 10px;
-    }
-    .hero h1 {
-      font-size: 2.5em;
-    }
-    .hero p {
-      font-size: 1.2em;
-    }
-    .cta-buttons {
-      flex-direction: column;
-      gap: 15px;
-    }
-    .value-section {
-      flex-direction: column;
-    }
-    .value-section img {
-      max-width: 100%;
-    }
-  }
-</style>
-{% endblock %}
-
 {% block content %}
   <section class="hero">
     <div class="hero-content">
-      <h1>Welcome to Mindset Playroom</h1>
-      <p>Discover fun events, routines, and activities to build positive mindsets for kids and families.</p>
+      <h1>Welcome to Mindset PlaySpace</h1>
+      <p>Discover fun learnings, routines, and activities to build positive mindsets for kids and families.</p>
       <div class="cta-buttons">
         <a href="{% url 'event_list' %}" class="cta">Explore Events</a>
         <a href="{% url 'signup_step1' %}" class="cta">Sign Up Now</a>
@@ -184,29 +15,34 @@ background:
   </section>
 
   <section class="features">
-    <div class="feature-card">  
-      <i class="fa-solid fa-calendar-days fa-3x"></i>
-      <h3>Exciting Events</h3>
-      <p>
-        Handpicked activities connect families, nurture social skills, and turn every event into a memorable learning experience.
-      </p>
+    <div class="feature-card">
+      <a href="{% url 'event_list' %}" class="feature-link" aria-label="Explore Fun Activities">
+        <i class="fa-solid fa-calendar-days fa-3x"></i>
+        <h3>Fun Activities!</h3>
+        <p>
+          Handpicked workshops, courses and events connect families, nurture social skills, and turn every event into a memorable learning experience.
+        </p>
+      </a>
     </div>
     <div class="feature-card">
-      <i class="fa-solid fa-clock fa-3x"></i>
-      <h3>Daily Routines</h3>
-      <p>
-        Empower your child with consistency! Boost daily wins—promoting responsibility, self-confidence, and a growth mindset from a young age.
-      </p>
+      <a href="{% url 'routine_list' %}" class="feature-link" aria-label="Explore Daily Routines">
+        <i class="fa-solid fa-clock fa-3x"></i>
+        <h3>Daily Routines</h3>
+        <p>
+          Empower your child with consistency! Boost daily wins—promoting responsibility, self-confidence, and a growth mindset from a young age.
+        </p>
+      </a>
     </div>
     <div class="feature-card">
-      <i class="fa-solid fa-face-smile-beam fa-3x"></i>
-      <h3>5-Min Fun</h3>
-      <p>
-        Quick, creative play ideas spark joy and cultivate motivated mindset.
-      </p>
+      <a href="{% url 'event_list' %}?format_type=5-min-play" class="feature-link" aria-label="Explore 5-Min Fun">
+        <i class="fa-solid fa-face-smile-beam fa-3x"></i>
+        <h3>5-Min Fun</h3>
+        <p>
+          Quick, creative play ideas spark joy and cultivate motivated mindset.
+        </p>
+      </a>
     </div>
   </section>
-
   <section class="value-section">
     <img src="https://res.cloudinary.com/dvrbpkbr7/image/upload/v1758234036/event_images/zxb8auu1mc5oy3juiy94.png" alt="Family">
     <div class="value-content">
@@ -219,9 +55,8 @@ background:
     </div>
   </section>
 
-
   <section class="bottom-cta">
     <h2>Ready to Join the Fun?</h2>
-    <a href="{% url 'become_vendor' %}" class="cta">Start for Free</a>
+    <a href="{% url 'signup_step1' %}" class="cta">Start for Free</a>
   </section>
 {% endblock %}
