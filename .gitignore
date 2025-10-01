@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+*.db
+.venv/
+staticfiles/
+db.sqlite3  # Exclude if you don't want to upload initial data; you can recreate it on the server
