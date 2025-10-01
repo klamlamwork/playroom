@@ -1,9 +1,7 @@
 
 <!--events/templates/events/assign_routine_from_fun.html-->
 {% extends "base.html" %}
-
 {% block title %}Create Fun Routine! | Mindset Playroom{% endblock %}
-
 {% block content %}
 <style>
   .routine-details {
@@ -55,7 +53,7 @@
 <div class="routine-details">
   <h1>Add {{ routine.name }} to Routine (from {{ fun.name }})</h1>
   {% if routine.photo %}
-    <img src="{{ routine.photo.url }}" alt="{{ routine.name }}">
+    <img src="{{ routine.photo }}" alt="{{ routine.name }}">
   {% endif %}
   <p>{{ routine.instructions|safe }}</p>
   <p><strong>Age Group:</strong> {{ routine.age_group }}</p>

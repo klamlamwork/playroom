@@ -40,8 +40,9 @@
             <div class="event-card-photo" style="display:flex;align-items:center;justify-content:center;color:#c9c9d6;font-size:1.3em;">No Photo</div>
             {% endif %}
             <div class="event-card-content">
-            <div class="event-card-title">{{ item.name }} (Event)</div>
-            <div class="event-card-meta">{{ item.start_datetime|date:"M d, Y, H:i" }}</div>
+            <div class="event-card-title">{{ item.name }} </div>
+            <!-- FIXED: Use local_start_datetime instead of start_datetime -->
+            <div class="event-card-meta">{{ item.local_start_datetime|date:"M d, Y, H:i" }}</div>
             <div class="event-card-meta">{{ item.location }}</div>
             <div class="event-card-meta">Fee: ${{ item.fee }} | Tickets: {{ item.tickets_available }}</div>
             {# Remove the event-card-actions/view button for card-only navigation #}
@@ -55,9 +56,9 @@
             {% endif %}
             <div class="event-card-content">
             <div class="event-card-title">{{ item.name }} (5-Min Fun)</div>
-            <div class="event-card-meta">Created: {{ item.created_at|date:"M d, Y" }}</div>
+            <!--div class="event-card-meta">Created: {{ item.created_at|date:"M d, Y" }}</div-->
             <div class="event-card-meta">Instructions: {{ item.instructions|truncatewords:10 }}</div>
-            <div class="event-card-meta">Tags: {{ item.tags }}</div>
+            <div class="event-card-meta">{{ item.tags }}</div>
             {# Remove the event-card-actions/view button for card-only navigation #}
             </div>
         {% endif %}

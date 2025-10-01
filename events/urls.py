@@ -1,4 +1,5 @@
 
+#events/urls.py
 from django.urls import path
 from . import views
 
@@ -30,4 +31,8 @@ urlpatterns = [
     path('<slug:slug>/', views.event_detail, name='event_detail'),
     path('five-min-fun/<str:slug>/', views.five_min_fun_detail, name='five_min_fun_detail'),
     path('routine/<str:slug>/', views.routine_detail, name='routine_detail'),
+]
+
+urlpatterns += [
+    path('get_routine_instance/<int:instance_id>/', views.get_routine_instance, name='get_routine_instance'),
 ]

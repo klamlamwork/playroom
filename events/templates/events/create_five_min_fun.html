@@ -1,11 +1,10 @@
 
-<!--playroom/events/templates/events/create_five_min_fun.html -->
+<!-- events/templates/events/create_five_min_fun.html -->
 {% extends "base.html" %}
-
 {% block title %}Create 5-Min Fun | Mindset Playroom{% endblock %}
-
 {% block content %}
     <h1>Create 5-Min Fun</h1>
+    
     {% if messages %}
         <ul>
             {% for message in messages %}
@@ -13,28 +12,73 @@
             {% endfor %}
         </ul>
     {% endif %}
-    <form method="post" enctype="multipart/form-data">
+    
+    <form method="post" action="">
         {% csrf_token %}
-        {{ form.name.label_tag }} {{ form.name }}<br>
-        <label for="id_photo">Photo:</label>
-        <button type="button" id="uploadWidget">Upload Photo</button>
-        {{ form.photo }}<br>
-        {{ form.instructions.label_tag }} {{ form.instructions }}<br>
-        {{ form.audio.label_tag }} {{ form.audio }}<br>
-        {{ form.tags.label_tag }} {{ form.tags }}<br>
-        {{ form.age_groups.label_tag }} {{ form.age_groups }}<br>
-        {{ form.format_type.label_tag }} {{ form.format_type }}<br>
-        {{ form.place.label_tag }} {{ form.place }}<br>
-        {{ form.super_powers.label_tag }} {{ form.super_powers }}<br>
-        {{ form.routines.label_tag }} {{ form.routines }}<br>
-        <button type="submit">Create</button>
+        
+        <div>
+            {{ form.name.label_tag }}
+            {{ form.name }}
+        </div>
+        
+        <div>
+            Photo:
+            <button type="button" id="uploadWidget">Upload Photo</button>
+            {{ form.photo }}
+        </div>
+        
+        <div>
+            Audio:
+            <button type="button" id="uploadAudioWidget">Upload Audio</button>
+            {{ form.audio }}
+        </div>
+        
+        <div>
+            {{ form.instructions.label_tag }}
+            {{ form.instructions }}
+        </div>
+        
+        <div>
+            {{ form.tags.label_tag }}
+            {{ form.tags }}
+        </div>
+        
+        <div>
+            {{ form.age_groups.label_tag }}
+            {{ form.age_groups }}
+        </div>
+        
+        <div>
+            {{ form.format_type.label_tag }}
+            {{ form.format_type }}
+        </div>
+        
+        <div>
+            {{ form.place.label_tag }}
+            {{ form.place }}
+        </div>
+        
+        <div>
+            {{ form.super_powers.label_tag }}
+            {{ form.super_powers }}
+        </div>
+        
+        <div>
+            {{ form.routines.label_tag }}
+            {{ form.routines }}
+        </div>
+        
+        <div>
+            <button type="submit">Create</button>
+        </div>
     </form>
-    <a href="{% url 'vendor_dashboard' %}">Back to Dashboard</a>
-
+    
+    <a href="{% url 'vendor_dashboard' %}">Back to Dashboard</a>  <!-- Adjust the URL name if needed -->
+    
     <script>
         // Cloudinary Upload Widget Integration
         document.addEventListener('DOMContentLoaded', function() {
-            const myWidget = cloudinary.createUploadWidget({
+            const photoWidget = cloudinary.createUploadWidget({
                 cloudName: 'dvrbpkbr7',  // Replace with your Cloudinary cloud name
                 uploadPreset: 'playroom_upload',  // Replace with your unsigned upload preset name
                 sources: ['local', 'url', 'camera'],
@@ -47,9 +91,27 @@
                     console.log("Uploaded photo URL:", uploadedUrl);
                 }
             });
-
+            
             document.getElementById('uploadWidget').addEventListener('click', function() {
-                myWidget.open();
+                photoWidget.open();
+            }, false);
+            
+            const audioWidget = cloudinary.createUploadWidget({
+                cloudName: 'dvrbpkbr7',  // Replace with your Cloudinary cloud name
+                uploadPreset: 'playroom_upload',  // Replace with your unsigned upload preset name
+                sources: ['local', 'url'],
+                multiple: false,
+                resourceType: 'video'  // Audio files are uploaded as 'video' resource type in Cloudinary
+            }, (error, result) => {
+                if (!error && result && result.event === "success") {
+                    const uploadedUrl = result.info.secure_url;
+                    document.getElementById('id_audio').value = uploadedUrl;
+                    console.log("Uploaded audio URL:", uploadedUrl);
+                }
+            });
+            
+            document.getElementById('uploadAudioWidget').addEventListener('click', function() {
+                audioWidget.open();
             }, false);
         });
     </script>

@@ -1,108 +1,10 @@
-{% extends "base.html" %}
 
-{% block title %}My Account | Mindset Playroom{% endblock %}
-
-{% block content %}
 
 <!-- users/templates/users/my_account.html -->
-<style>
-.kid-calendar-table {
-  width: 100%;
-  min-width: 330px;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: 1em;
-}
-.kid-calendar-table th {
-  padding: 2px;
-  color: #666;
-  font-size: .98em;
-  font-weight: normal;
-  border-bottom: 1px solid #eee;
-  text-align: center;
-}
-.kid-calendar-table td {
-  vertical-align: top;
-  background: #fff;
-  height: 58px;
-  min-height: 48px;
-  border: 1px solid #eee;
-  position: relative;
-  padding: 3px 2px 2px 5px;
-  font-size: .98em;
-  word-break: break-word;
-}
-.kcal-day-label {
-  position: absolute;
-  left: 4px;
-  top: 4px;
-  font-size: 0.75em;
-  color: #aaa;
-  font-weight: 600;
-}
-.kcal-evt {
-  margin: 0 0 2px 0;
-  background: #e7f6e7;
-  color: #34603f;
-  font-size: .91em;
-  border-radius: 3px;
-  padding: 1px 3px 1px 3px;
-  cursor: pointer;
-  display: block;
-}
-.kid-avatar.selected {
-  outline: 3px solid #3989fa;
-  box-shadow: 0 2px 8px #bdd9ff;
-}
-@media (max-width:500px) {
-  .kid-calendar-table { font-size: .95em; min-width: 100%; }
-  .kid-calendar-table td { height: 36px; min-height: 28px; font-size: .91em; }
-}
-.kid-calendar-scroll {
-  overflow-x: auto;
-  width: 100%;
-}
-/* Calendar Navigation Styles */
-.calendar-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 1.1em;
-  font-weight: bold;
-}
-.nav-arrow {
-  background: none;
-  border: none;
-  font-size: 1.5em;
-  cursor: pointer;
-  color: #666;
-  padding: 0 10px;
-  touch-action: manipulation; /* For better touch */
-}
-.nav-arrow:hover, .nav-arrow:active {
-  color: #333;
-}
-.nav-arrow:disabled {
-  color: #ddd;
-  cursor: not-allowed;
-}
-.month-header {
-  text-align: center;
-  font-weight: bold;
-  margin: 10px 0 5px 0;
-  color: #333;
-  font-size: 1.1em;
-}
-/* Swipe support */
-.calendar-container {
-  position: relative;
-  overflow: hidden;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: pan-y; /* Allow vertical scroll, but horizontal for swipe */
-}
-</style>
+{% extends "base.html" %}
+{% block title %}My Account | Mindset Playroom{% endblock %}
+{% block content %}
+
 
 <h1>My Account</h1>
 <!-- Display messages (errors or success) -->
@@ -116,6 +18,8 @@
 
 <p>Name: {{ user.first_name }} {{ user.last_name }}</p>
 <p>Phone: {{ user.userprofile.phone_number }}</p>
+<p>City/Town: {{ user.userprofile.city }}</p>
+
 
 <h2>Caregivers:</h2>
 <div style="display: flex; gap: 24px; align-items: center; margin-top: 20px; margin-bottom: 32px;">
@@ -157,7 +61,7 @@
     <button type="submit" id="caregiver-update-btn">Update</button>
   </form>
   <div id="caregiver-calendar-wrap" style="margin-top:32px;">
-    <h4>Events for <span id="calendar-caregiver-name"></span></h4>
+    <h3>Schedule for <span id="calendar-caregiver-name"></span></h3>
     <div class="kid-calendar-scroll">
       <div class="calendar-container" id="caregiver-calendar-container">
         <div class="calendar-nav">
@@ -214,6 +118,16 @@
         </div>
         <div id="kid-calendar"></div>
       </div>
+
+      <div id="kid-journey" style="display: none;">
+        <h3 class="journey-header">Mindset Foundation Journey for <span id="journey-kid-name"></span></h3>
+        <div class="swiper myJourneySwiper">
+          <div class="swiper-wrapper" id="levels-wrapper"></div>
+          <div class="swiper-button-prev"></div>
+          <div class="swiper-button-next"></div>
+          <div class="swiper-pagination"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -260,7 +174,7 @@
 </div>
 
 <div id="event-modal-bg" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:3000; background:rgba(0,0,0,0.35);">
-  <div id="event-modal" style="max-width:370px; width:92vw; margin:60px auto 0; background:#fff; border-radius:10px; box-shadow:0 3px 24px #777; padding:22px 18px 18px 18px; display:flex; flex-direction:column; position:relative;">
+  <div id="event-modal" style="max-width:370px; width:92vw; background:#fff; border-radius:10px; box-shadow:0 3px 24px #777; padding:22px; display:flex; flex-direction:column; position:relative;">
     <button id="close-event-modal" type="button" style="position:absolute; right:14px; top:14px; border:none; background:none; font-size:1.6em; color:#666;">×</button>
     <h3 id="evt-modal-title" style="font-size:1.15em; margin-top:0; margin-bottom:.3em"></h3>
     <div style="font-size:.97em; color:#555;">
@@ -275,8 +189,40 @@
   </div>
 </div>
 
+<!-- Updated five-min-modal with dynamic routines section -->
+<div id="five-min-modal-bg" aria-hidden="true">
+  <div id="five-min-modal" class="modal" style="text-align: left;">
+    <button id="close-five-min-modal" class="close" type="button">×</button>
+    <p><b>5-Min Fun:</b> <span id="fmf-modal-name"></span></p>
+    <img id="fmf-modal-photo" alt="" style="max-width: 100%; display: none;">
+    <p><b>Instructions:</b> <span id="fmf-modal-instructions"></span></p>
+    <audio id="fmf-modal-audio" controls style="display: none;">
+      <source src="" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    <p><b>Place:</b> <span id="fmf-modal-place"></span></p>
+    <p><b>Super Powers:</b> <span id="fmf-modal-powers"></span></p>
+    <h3 id="fmf-routines-header" style="display: none;">Assigned Routines - Add to Your Kid's Routine</h3>
+    <div id="fmf-routines-list"></div>
+    <button id="fmf-complete-btn">Completed</button>
+    <div id="fmf-complete-status">Marked as completed!</div>
+  </div>
+</div>
+
+<span id="modal-trigger" class="kcal-evt" style="display:none;"></span>
+
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://unpkg.com/swiper@12/swiper-bundle.min.js"></script>
 <script>
+var userTimezone = "{{ user_timezone|escapejs }}";
+var assignUrlTemplate = "{% url 'assign_routine_from_fun' 0 0 %}";
+
+function openRoutinePopup(routine_id, fun_id) {
+  var url = assignUrlTemplate.replace('0/0/', fun_id + '/' + routine_id + '/');
+  window.open(url, 'routine_popup', 'width=600,height=700,scrollbars=yes,resizable=yes');
+}
+
 // Data from Django context (unchanged)
 var cgCompleted = {
   {% for cg_id, comps in completed_events.items %}
@@ -299,6 +245,16 @@ var kidCompleted = {
   {% endfor %}
 };
 
+var courseLevels = {{ levels_json|safe }} || [];  // List of level objects {id, number, title, description}
+var levelPoints = {{ level_points_json|safe }} || {};  // {level_id: [points {id, position, five_min_fun: {id, name, instructions, slug, ...}}]}
+var kidCompletions = {{ kid_completions_json|safe }} || {};  // {kid_id: [fmf_ids completed]}
+var fiveMinData = {};  // Populate from points
+Object.values(levelPoints).flat().forEach(function(p) {
+  if (p.five_min_fun) {
+    fiveMinData[p.five_min_fun.id] = p.five_min_fun;
+  }
+});
+
 var kidsData = [
   {% for kid in kids %}
     {id: {{ kid.id }}, name: "{{ kid.first_name|escapejs }}", birthday: "{{ kid.birthday }}"}{% if not forloop.last %},{% endif %}
@@ -316,7 +272,8 @@ var kidEvents = {
         start_time: "{{ ev.start_time|escapejs }}",
         end_time: "{{ ev.end_time|escapejs }}",
         location: "{{ ev.location|escapejs }}",
-        type: "{{ ev.type|escapejs }}"  // Ensure type is passed
+        type: "{{ ev.type|escapejs }}",  // Ensure type is passed
+        utc_start: "{{ ev.utc_start|default:''|escapejs }}"  // FIXED: Add utc_start (default empty for non-events)
       }{% if not forloop.last %},{% endif %}
       {% endfor %}
     ]{% if not forloop.last %},{% endif %}
@@ -338,9 +295,10 @@ var cgEvents = {
         desc: "{{ ev.desc|escapejs }}",
         start_time: "{{ ev.start_time|escapejs }}",
         end_time: "{{ ev.end_time|escapejs }}",
-        location: "{{ ev.location|escapejs }}"
+        location: "{{ ev.location|escapejs }}",
+        utc_start: "{{ ev.utc_start|escapejs }}"  // FIXED: Add utc_start
       }{% if not forloop.last %},{% endif %}
-    {% endfor %}
+      {% endfor %}
     ]{% if not forloop.last %},{% endif %}
   {% endfor %}
 };
@@ -388,20 +346,21 @@ function buildCalendar(year, month, events, completedList) {
                 });
                 var evtType = ev.type || 'event';  // Default to 'event'
                 table += '<span class="kcal-evt"'
-                    + ' data-evt-title="' + ev.name + '"'
+                    + ' data-evt-title="' + htmlEscape(ev.name) + '"'
                     + ' data-evt-id="' + ev.id + '"'
                     + ' data-evt-type="' + evtType + '"'  // Pass type ('event' or 'routine')
                     + ' data-evt-date="' + ev.date + '"'
-                    + ' data-evt-datetime="' + ev.start_time + ' — ' + ev.end_time + '"'
-                    + ' data-evt-location="' + (ev.location || "") + '"'
-                    + ' data-evt-desc="' + (ev.desc || "") + '"'
+                    + ' data-evt-datetime="' + htmlEscape(ev.start_time) + ' — ' + htmlEscape(ev.end_time) + '"'
+                    + ' data-evt-location="' + htmlEscape(ev.location || "") + '"'
+                    + ' data-evt-desc="' + htmlEscape(ev.desc || "") + '"'
+                    + ' data-utc-start="' + htmlEscape(ev.utc_start || "") + '"'  // FIXED: Add data-utc-start
                     + ' onclick="showEventModal(this)"'
                     + '>'
                     + (done
-                        ? '<span style="color:green; font-size:15px; vertical-align:middle;" title="Completed today">&#x2714;&nbsp;</span>'
+                        ? '<span class="kcal-tick" title="Completed today">&#x2714;&nbsp;</span>'
                         : ''
                       )
-                    + ev.name
+                    + htmlEscape(ev.name)
                     + '</span>';
             });
         }
@@ -462,6 +421,13 @@ function loadKidCalendar(kidID) {
         kidCurrentYear = ym.year;
         kidCurrentMonth = ym.month;
         updateKidCalendar(ym.year, ym.month);
+        if (courseLevels.length > 0) {
+          $('#kid-journey').show();
+          $('#journey-kid-name').text(kid.name);
+          buildJourneySlider(kidID);
+        } else {
+          $('#kid-journey').hide();
+        }
         setTimeout(function() {
             $('#edit-kid-birthday').val(kid.birthday).trigger('change');
         }, 50);
@@ -522,7 +488,7 @@ function navigateMonth(direction, isKid) {
     }
 }
 
-// FIXED: showEventModal with type routing (like caregiver logic) - unchanged
+// showEventModal with type routing (like caregiver logic) - unchanged
 window.showEventModal = function(elt) {
     $('#evt-modal-title').text($(elt).data('evt-title'));
     $('#evt-modal-datetime').text($(elt).data('evt-datetime'));
@@ -532,78 +498,43 @@ window.showEventModal = function(elt) {
     var evtType = $(elt).data('evt-type') || 'event';  // Default 'event'
     var evtId = $(elt).data('evt-id');
     var evtDate = $(elt).data('evt-date');
+    var utcStart = $(elt).data('utc-start');  // FIXED: Now available for timed events
     var inCaregiverMode = (currentCG !== null);
-    // Check if date is today or past before showing button
-    var today = new Date().toISOString().split('T')[0];  // YYYY-MM-DD
-    var isTodayOrPast = evtDate <= today;
-    if(inCaregiverMode){
-        // For caregivers: Use event completion (as before)
-        if (isTodayOrPast) {
+    var done = $(elt).find('.kcal-tick').length > 0;  // FIXED: Check if already ticked (done)
+    $('#mark-done-btn').hide();  // Initially hide
+    $('#event-modal-bg').fadeIn(90);  // Show modal immediately
+
+    // FIXED: Fetch REAL UTC from server (via API in get_current_utc)
+    $.get("{% url 'get_utc' %}", function(data) {
+        var currentUTCISO = data.utc_now;
+        var currentUTC = new Date(currentUTCISO);
+        // FIXED: Compute local date in user's timezone
+        var localNow = new Date(currentUTC.toLocaleString('en-US', { timeZone: userTimezone }));
+        var localDate = localNow.toISOString().split('T')[0];
+        // FIXED: Determine if button should show: for timed, past start; for anytime (e.g., routine), exact local day
+        var isPast = utcStart ? (currentUTCISO > utcStart) : (localDate === evtDate);
+        if (isPast && !done) {  // FIXED: Add !done to prevent showing for completed
             $('#mark-done-btn').show()
                 .off('click')
                 .on('click', function(e){
                     e.preventDefault();
-                    var cgID = currentCG;
-                    $.post('/events/mark_caregiver_event_completed/', {
-                        caregiver_id: cgID,
-                        event_id: evtId,
-                        event_date: evtDate,
-                        csrfmiddlewaretoken: '{{ csrf_token }}'
-                    }, function(resp){
-                        if(resp.success){
-                            if (!cgCompleted[cgID]) cgCompleted[cgID] = [];
-                            cgCompleted[cgID].push({event_id: evtId, date: evtDate});
-                            loadCaregiverCalendar(cgID);
-                            $('#mark-done-status').show().delay(1000).fadeOut();
-                            setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
-                        } else {
-                            alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
+                    if (inCaregiverMode) {
+                        var cgID = currentCG;
+                        if (!cgID || isNaN(cgID)) {  // FIXED: Safeguard invalid ID
+                            alert("Invalid caregiver selection.");
+                            return;
                         }
-                    }).fail(function(){
-                        alert("Request failed. Check connection.");
-                    });
-                });
-        } else {
-            $('#mark-done-btn').hide();
-        }
-    } else {
-        // For kids: Route by type (mirrors caregiver routing)
-        if (isTodayOrPast) {
-            $('#mark-done-btn').show()
-                .off('click')
-                .on('click', function(e){
-                    e.preventDefault();
-                    var kidID = currentKid;  // Current kid from loadKidCalendar
-                    var kidIds = [kidID];  // Single kid for now
-                    if (evtType === 'routine') {
-                        // For routines, post to routine endpoint
-                        $.post('/events/mark_kid_routine_completed/', {
-                            routine_instance_id: evtId,
+                        var cgIDs = [cgID];
+                        $.post('/events/mark_caregiver_event_completed/', {
+                            caregiver_ids: cgIDs,  // FIXED: Send as list for consistency
+                            event_id: evtId,
+                            event_date: evtDate,
                             csrfmiddlewaretoken: '{{ csrf_token }}'
                         }, function(resp){
                             if(resp.success){
-                                if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
-                                kidCompleted[kidID].push({event_id: evtId, date: evtDate});
-                                loadKidCalendar(kidID);  // Reload to show tick
-                                $('#mark-done-status').show().delay(1000).fadeOut();
-                                setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
-                            } else {
-                                alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
-                            }
-                        }).fail(function(){
-                            alert("Request failed. Check connection.");
-                        });
-                    } else if (evtType === 'five_min_fun') {
-                        // For 5-Min Fun, post to five_min endpoint
-                        $.post('/events/mark_kid_five_min_fun_completed/', {
-                            five_min_fun_id: evtId,
-                            kid_ids: kidIds,  // Array [currentKid]
-                            csrfmiddlewaretoken: '{{ csrf_token }}'
-                        }, function(resp){
-                            if(resp.success){
-                                if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
-                                kidCompleted[kidID].push({event_id: evtId, date: evtDate});
-                                loadKidCalendar(kidID);
+                                if (!cgCompleted[cgID]) cgCompleted[cgID] = [];
+                                cgCompleted[cgID].push({event_id: evtId, date: evtDate});
+                                loadCaregiverCalendar(cgID);
                                 $('#mark-done-status').show().delay(1000).fadeOut();
                                 setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
                             } else {
@@ -613,17 +544,104 @@ window.showEventModal = function(elt) {
                             alert("Request failed. Check connection.");
                         });
                     } else {
-                        // For events (including 5-min-play Events), post to event endpoint
-                        $.post('/events/mark_kid_event_completed/', {
+                        var kidID = currentKid;
+                        if (!kidID || isNaN(kidID)) {  // FIXED: Add similar safeguard for kid
+                            alert("Invalid kid selection.");
+                            return;
+                        }
+                        var kidIds = [kidID];  // Single kid for now
+                        if (evtType === 'routine') {
+                            // For routines, post to routine endpoint
+                            $.post('/events/mark_kid_routine_completed/', {
+                                routine_instance_id: evtId,
+                                csrfmiddlewaretoken: '{{ csrf_token }}'
+                            }, function(resp){
+                                if(resp.success){
+                                    if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
+                                    kidCompleted[kidID].push({event_id: evtId, date: evtDate});
+                                    loadKidCalendar(kidID);  // Reload to show tick
+                                    $('#mark-done-status').show().delay(1000).fadeOut();
+                                    setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
+                                } else {
+                                    alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
+                                }
+                            }).fail(function(){
+                                alert("Request failed. Check connection.");
+                            });
+                        } else if (evtType === 'five_min_fun') {
+                            // For 5-Min Fun, post to five_min endpoint
+                            $.post('/events/mark_kid_five_min_fun_completed/', {
+                                five_min_fun_id: evtId,
+                                kid_ids: kidIds,  // Array [currentKid]
+                                csrfmiddlewaretoken: '{{ csrf_token }}'
+                            }, function(resp){
+                                if(resp.success){
+                                    if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
+                                    kidCompleted[kidID].push({event_id: evtId, date: evtDate});
+                                    loadKidCalendar(kidID);
+                                    $('#mark-done-status').show().delay(1000).fadeOut();
+                                    setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
+                                } else {
+                                    alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
+                                }
+                            }).fail(function(){
+                                alert("Request failed. Check connection.");
+                            });
+                        } else {
+                            // For events (including 5-min-play Events), post to event endpoint
+                            $.post('/events/mark_kid_event_completed/', {
+                                event_id: evtId,
+                                kid_ids: kidIds,
+                                event_date: evtDate,
+                                csrfmiddlewaretoken: '{{ csrf_token }}'
+                            }, function(resp){
+                                if(resp.success){
+                                    if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
+                                    kidCompleted[kidID].push({event_id: evtId, date: evtDate});
+                                    loadKidCalendar(kidID);
+                                    $('#mark-done-status').show().delay(1000).fadeOut();
+                                    setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
+                                } else {
+                                    alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
+                                }
+                            }).fail(function(){
+                                alert("Request failed. Check connection.");
+                            });
+                        }
+                    }
+                });
+        }
+    }).fail(function(){
+        // Fallback to browser time if fetch fails (note: this violates "no browser time" but is a rare fallback)
+        var currentUTC = new Date();
+        var currentUTCISO = currentUTC.toISOString();
+        // FIXED: Compute local date in user's timezone
+        var localNow = new Date(currentUTC.toLocaleString('en-US', { timeZone: userTimezone }));
+        var localDate = localNow.toISOString().split('T')[0];
+        // FIXED: Determine if button should show: for timed, past start; for anytime (e.g., routine), exact local day
+        var isPast = utcStart ? (currentUTCISO > utcStart) : (localDate === evtDate);
+        if (isPast && !done) {
+            $('#mark-done-btn').show()
+                .off('click')
+                .on('click', function(e){
+                    e.preventDefault();
+                    if (inCaregiverMode) {
+                        var cgID = currentCG;
+                        if (!cgID || isNaN(cgID)) {
+                            alert("Invalid caregiver selection.");
+                            return;
+                        }
+                        var cgIDs = [cgID];
+                        $.post('/events/mark_caregiver_event_completed/', {
+                            caregiver_ids: cgIDs,
                             event_id: evtId,
-                            kid_ids: kidIds,
                             event_date: evtDate,
                             csrfmiddlewaretoken: '{{ csrf_token }}'
                         }, function(resp){
                             if(resp.success){
-                                if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
-                                kidCompleted[kidID].push({event_id: evtId, date: evtDate});
-                                loadKidCalendar(kidID);
+                                if (!cgCompleted[cgID]) cgCompleted[cgID] = [];
+                                cgCompleted[cgID].push({event_id: evtId, date: evtDate});
+                                loadCaregiverCalendar(cgID);
                                 $('#mark-done-status').show().delay(1000).fadeOut();
                                 setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
                             } else {
@@ -632,16 +650,364 @@ window.showEventModal = function(elt) {
                         }).fail(function(){
                             alert("Request failed. Check connection.");
                         });
+                    } else {
+                        var kidID = currentKid;
+                        if (!kidID || isNaN(kidID)) {
+                            alert("Invalid kid selection.");
+                            return;
+                        }
+                        var kidIds = [kidID];
+                        if (evtType === 'routine') {
+                            $.post('/events/mark_kid_routine_completed/', {
+                                routine_instance_id: evtId,
+                                csrfmiddlewaretoken: '{{ csrf_token }}'
+                            }, function(resp){
+                                if(resp.success){
+                                    if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
+                                    kidCompleted[kidID].push({event_id: evtId, date: evtDate});
+                                    loadKidCalendar(kidID);
+                                    $('#mark-done-status').show().delay(1000).fadeOut();
+                                    setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
+                                } else {
+                                    alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
+                                }
+                            }).fail(function(){
+                                alert("Request failed. Check connection.");
+                            });
+                        } else if (evtType === 'five_min_fun') {
+                            $.post('/events/mark_kid_five_min_fun_completed/', {
+                                five_min_fun_id: evtId,
+                                kid_ids: kidIds,
+                                csrfmiddlewaretoken: '{{ csrf_token }}'
+                            }, function(resp){
+                                if(resp.success){
+                                    if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
+                                    kidCompleted[kidID].push({event_id: evtId, date: evtDate});
+                                    loadKidCalendar(kidID);
+                                    $('#mark-done-status').show().delay(1000).fadeOut();
+                                    setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
+                                } else {
+                                    alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
+                                }
+                            }).fail(function(){
+                                alert("Request failed. Check connection.");
+                            });
+                        } else {
+                            $.post('/events/mark_kid_event_completed/', {
+                                event_id: evtId,
+                                kid_ids: kidIds,
+                                event_date: evtDate,
+                                csrfmiddlewaretoken: '{{ csrf_token }}'
+                            }, function(resp){
+                                if(resp.success){
+                                    if (!kidCompleted[kidID]) kidCompleted[kidID] = [];
+                                    kidCompleted[kidID].push({event_id: evtId, date: evtDate});
+                                    loadKidCalendar(kidID);
+                                    $('#mark-done-status').show().delay(1000).fadeOut();
+                                    setTimeout(function(){ $('#event-modal-bg').fadeOut(100); }, 800);
+                                } else {
+                                    alert("Failed to mark as completed: " + (resp.error || "Unknown error"));
+                                }
+                            }).fail(function(){
+                                alert("Request failed. Check connection.");
+                            });
+                        }
                     }
                 });
-        } else {
-            $('#mark-done-btn').hide();
         }
-    }
-    $('#event-modal-bg').fadeIn(90);
+    });
 };
 
+function buildJourneySlider(kidID) {
+  const levels = courseLevels.map(lv => ({
+    id: lv.id,
+    title: `${lv.title} (${(levelPoints[lv.id] || []).length} activities)`,
+    courses: (levelPoints[lv.id] || []).map(p => ({
+      id: p.five_min_fun.id,
+      title: p.five_min_fun.name,
+      completed: (kidCompletions[kidID] || []).includes(p.five_min_fun.id)
+    }))
+  }));
+  window.currentLevels = levels;
+
+  const wrapper = document.getElementById('levels-wrapper');
+  wrapper.innerHTML = '';
+  levels.forEach(lv => wrapper.appendChild(createSlide(lv)));
+
+  if (window.journeySwiper) {
+    window.journeySwiper.destroy(true, true);
+  }
+  const swiper = new Swiper('.myJourneySwiper', {
+    slidesPerView: 1,
+    spaceBetween: 24,
+    navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+    pagination: { el: '.swiper-pagination', clickable: true },
+    keyboard: { enabled: true }
+  });
+  window.journeySwiper = swiper;
+
+  swiper.on('slideChange', () => placePinsExact());
+  setTimeout(placePinsExact, 40);
+}
+
+// SVG params
+const viewW = 1200, viewH = 480;
+const pad = 40;
+const leftRatio = 0.08;
+const rightRatio = 0.92;
+const centerRatio = 0.5;
+const horizontalInset = 80; // how far pins sit from horizontal ends (visual margin)
+
+// Build path with alternating horizontals & verticals
+function buildAlternatingPath(bands) {
+  bands = Math.max(1, Math.floor(bands));
+  const innerW = viewW - pad * 2;
+  const leftX = pad + innerW * leftRatio;
+  const rightX = pad + innerW * rightRatio;
+  const centerX = pad + innerW * centerRatio;
+
+  // compute bandYs
+  const bandYs = [];
+  for (let i=0;i<bands;i++){
+    const y = pad + ((bands === 1) ? (viewH/2) : (i/(bands-1)) * (viewH - pad*2));
+    bandYs.push(y);
+  }
+
+  // build path: alternate direction
+  let d = '';
+  for (let i=0;i<bandYs.length;i++){
+    const y = bandYs[i];
+    const isEven = (i % 2 === 0); // 0: left->right, 1: right->left
+    const startX = isEven ? leftX : rightX;
+    const endX   = isEven ? rightX : leftX;
+
+    // horizontal segment
+    d += `M ${startX.toFixed(2)} ${y.toFixed(2)} H ${endX.toFixed(2)} `;
+
+    // vertical connector at endX down to next band's y (if exists)
+    if (i < bandYs.length - 1) {
+      const nextY = bandYs[i+1];
+      // vertical drawn at endX
+      d += `M ${endX.toFixed(2)} ${y.toFixed(2)} V ${nextY.toFixed(2)} `;
+    }
+  }
+
+  return { d, geometry: { leftX, rightX, centerX, bandYs } };
+}
+
+// create slide DOM and attach geometry for pin placement
+function createSlide(level) {
+  const courses = level.courses || [];
+  const pinsPerBand = 2;
+  const bandsNeeded = Math.max(1, Math.ceil(courses.length / pinsPerBand));
+  const { d, geometry } = buildAlternatingPath(bandsNeeded);
+
+  const slide = document.createElement('div');
+  slide.className = 'swiper-slide';
+  slide.innerHTML = `
+    <div class="slide-card">
+      <h2>${level.title}</h2>
+      <div class="roadmap">
+        <svg viewBox="0 0 ${viewW} ${viewH}" preserveAspectRatio="xMaxYMin meet" aria-hidden="false">
+          <path class="road-line" d="${d}"></path>
+          <path class="road-accent" d="${d}"></path>
+        </svg>
+      </div>
+    </div>
+  `;
+  slide._geometry = geometry;
+  slide._bandsNeeded = bandsNeeded;
+  return slide;
+}
+
+// Place pins along each horizontal exactly, following path direction
+function placePinsExact() {
+  const levels = window.currentLevels || [];
+  document.querySelectorAll('.myJourneySwiper .swiper-slide').forEach((slide, idx) => {
+    // clear pins
+    slide.querySelectorAll('.pin').forEach(n => n.remove());
+    const svg = slide.querySelector('svg');
+    const geometry = slide._geometry;
+    const bandsNeeded = slide._bandsNeeded;
+    const courses = levels[idx] ? levels[idx].courses || [] : [];
+    if (!geometry || !svg) return;
+
+    const { leftX, rightX, centerX, bandYs } = geometry;
+
+    const positions = []; // will fill according to path order
+    let courseCursor = 0;
+    for (let b=0;b<bandYs.length;b++){
+      const y = bandYs[b];
+      const isEven = (b % 2 === 0); // even: left->right
+      const startX = isEven ? leftX : rightX;
+      const endX   = isEven ? rightX : leftX;
+      const dir = (endX - startX) >= 0 ? 1 : -1;
+
+      // decide how many pins to place in this band
+      const remain = courses.length - courseCursor;
+      if (remain <= 0) break;
+      if (remain === 1) {
+        // single pin at midpoint along path direction
+        const midX = startX + (endX - startX) * 0.5;
+        positions.push({ x: midX, y, bandIndex: b });
+        courseCursor += 1;
+      } else {
+        // two pins: at 25% and 75% along path direction, in path order
+        const p1 = startX + (endX - startX) * 0.25;
+        const p2 = startX + (endX - startX) * 0.75;
+        // ensure path order: if dir positive (left->right) order p1 then p2; if negative, p2 then p1
+        if (dir > 0) {
+          positions.push({ x: p1, y, bandIndex: b });
+          positions.push({ x: p2, y, bandIndex: b });
+        } else {
+          positions.push({ x: p2, y, bandIndex: b });
+          positions.push({ x: p1, y, bandIndex: b });
+        }
+        courseCursor += 2;
+      }
+    }
+
+    // now create SVG pins mapping to course order
+    for (let i=0;i<positions.length && i<courses.length;i++){
+      const pos = positions[i];
+      const course = courses[i];
+      if (!pos) continue;
+      const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+      g.setAttribute('class','pin');
+      if (course.completed) g.classList.add('completed');
+      g.setAttribute('transform', `translate(${pos.x}, ${pos.y})`);
+      g.setAttribute('role','button');
+      g.setAttribute('tabindex','0');
+
+      // *** KEEP ONLY THIS ***
+      g.innerHTML = course.completed
+        ? `
+          <circle class="pin-bg" r="18"></circle>
+          <path class="tick" d="M -12 0 L -3 10 L 15 -10" pathLength="100"></path>
+        `
+        : `
+          <circle class="pin-bg" r="18"></circle>
+          <path class="cue" d="M -8 -12 L 14 0 L -8 12 Z"></path>
+        `;
+
+
+      g.addEventListener('click', ()=> openFiveMinModal(course));
+      g.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') openFiveMinModal(course); });
+      svg.appendChild(g);
+    }
+  });
+}
+
+// debounce helper
+function debounce(fn, ms=100){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+// Updated openFiveMinModal
+function openFiveMinModal(course) {
+  var fmf = fiveMinData[course.id];
+  console.log(fmf);  // Log the data for debugging to see available fields
+  $('#fmf-modal-name').text(fmf.name || '');
+  if (fmf.photo) {
+    $('#fmf-modal-photo').attr('src', fmf.photo).attr('alt', fmf.name || '').show();
+  } else {
+    $('#fmf-modal-photo').hide();
+  }
+  $('#fmf-modal-instructions').text(fmf.instructions || '');
+  if (fmf.audio) {
+    $('#fmf-modal-audio source').attr('src', fmf.audio).attr('type', 'audio/mpeg');
+    $('#fmf-modal-audio').show()[0].load();
+  } else {
+    $('#fmf-modal-audio').hide();
+  }
+  $('#fmf-modal-place').text(fmf.place_display || (fmf.place ? fmf.place.charAt(0).toUpperCase() + fmf.place.slice(1) : ''));
+  $('#fmf-modal-powers').text(fmf.super_powers ? fmf.super_powers.join(', ') : '');
+  $('#fmf-complete-status').hide();
+  if (!course.completed) {
+    $('#fmf-complete-btn').show().off('click').on('click', function() {
+      $.post('/events/mark_kid_five_min_fun_completed/', {
+        five_min_fun_id: course.id,
+        kid_ids: [currentKid],
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+      }, function(resp) {
+        if (resp.success) {
+          if (!kidCompletions[currentKid]) kidCompletions[currentKid] = [];
+          kidCompletions[currentKid].push(course.id);
+          course.completed = true;
+          $('#fmf-complete-status').show().delay(1000).fadeOut();
+          setTimeout(function() {
+            $('#five-min-modal-bg').removeClass('open');
+            placePinsExact();
+          }, 800);
+        } else {
+          alert(resp.error || "Failed to mark completed.");
+        }
+      }).fail(function(){
+        alert("Request failed. Check connection.");
+      });
+    });
+  } else {
+    $('#fmf-complete-btn').hide();
+  }
+  // Dynamic routines
+  $('#fmf-routines-header').hide();
+  $('#fmf-routines-list').empty();
+  if (fmf.routines && fmf.routines.length > 0) {
+    $('#fmf-routines-header').show();
+    fmf.routines.forEach(function(r) {
+      var btn = $('<button>').text('Add ' + (r.name || '') + ' to Routine').on('click', function() {
+        openRoutinePopup(r.id, course.id);
+      });
+      $('#fmf-routines-list').append(btn).append('<br><br>');
+    });
+  } else {
+    $('#fmf-routines-list').html('<p>No routines assigned to this 5-Min Fun.</p>');
+  }
+  $('#five-min-modal-bg').addClass('open');
+}
+
+$('#close-five-min-modal').on('click', function() {
+  $('#five-min-modal-bg').removeClass('open');
+});
+$('#five-min-modal-bg').on('click', function(e) {
+  if (e.target === this) $('#five-min-modal-bg').removeClass('open');
+});
+
 $(function() {
+
+  // In my_account.html <script>, add inside $(function(){ ... })
+
+  // Check for open_modal param to auto-open modal
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('open_modal') === 'true') {
+      const instanceId = urlParams.get('routine_instance_id');
+      const evtDate = urlParams.get('date');
+      const kidId = parseInt(urlParams.get('kid_id'));
+      if (instanceId && evtDate && kidId) {
+          // Select the kid first (load calendar)
+          loadKidCalendar(kidId);
+          // Fetch and populate modal
+          $.get(`/events/get_routine_instance/${instanceId}/`, function(data) {
+              if (data.success) {
+                  const trigger = $('#modal-trigger');
+                  trigger.data({
+                      'evt-title': data.name,
+                      'evt-id': data.id,
+                      'evt-type': data.type,
+                      'evt-date': evtDate,
+                      'evt-datetime': data.datetime,
+                      'evt-location': data.location,
+                      'evt-desc': data.desc,
+                      'utc-start': data.utc_start
+                  });
+                  showEventModal(trigger[0]);
+              } else {
+                  alert('Failed to load routine details.');
+              }
+          }).fail(function() {
+              alert('Request failed. Check connection.');
+          });
+      }
+  }
+
     // Kid navigation buttons
     $('#kid-prev-month').on('click', function() {
         navigateMonth(-1, true);
@@ -756,6 +1122,9 @@ $(function() {
         if(e.target === this) $('#event-modal-bg').fadeOut(90);
     });
 });
+
+$(window).on('resize', debounce(placePinsExact, 120));
+$(window).on('orientationchange', debounce(placePinsExact, 150));
 </script>
 
 {% endblock %}

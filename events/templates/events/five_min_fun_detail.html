@@ -1,13 +1,10 @@
 
 
-{% extends "base.html" %}
 
-{% block title %} Build Fun Routines! | Mindset Playroom{% endblock %}
-
-{% block content %}
 <!-- events/templates/events/five_min_fun_detail.html -->
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% block title %} Build Fun Routines! | Mindset Playroom{% endblock %}
+{% block content %}
 <head>
     <title>{{ five_min_fun.name }} - 5-Min Fun Detail</title>
     <style>
@@ -49,12 +46,12 @@
 <body>
     <h1>{{ five_min_fun.name }}</h1>
     {% if five_min_fun.photo %}
-        <img src="{{ five_min_fun.photo.url }}" alt="{{ five_min_fun.name }}" style="max-width: 100%;">
+        <img src="{{ five_min_fun.photo }}" alt="{{ five_min_fun.name }}" style="max-width: 100%;">
     {% endif %}
     <p><b>Instructions:</b> {{ five_min_fun.instructions }}</p>
     {% if five_min_fun.audio %}
         <audio controls>
-            <source src="{{ five_min_fun.audio.url }}" type="audio/mpeg">
+            <source src="{{ five_min_fun.audio }}" type="audio/mpeg">
             Your browser does not support the audio element.
         </audio>
     {% endif %}

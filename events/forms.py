@@ -1,8 +1,10 @@
 
-#events/forms.py
+# events/forms.py
 from django import forms
-from .models import Event, EventRegistration, FiveMinFun, Routine, KidRoutineAssignment, AgeGroup, SuperPower, FORMAT_CHOICES  # FIXED: Added FORMAT_CHOICES import
+from .models import Event, EventRegistration, FiveMinFun, Routine, KidRoutineAssignment, AgeGroup, SuperPower, FORMAT_CHOICES
 from users.models import KidProfile
+from django.utils import timezone
+import pytz
 
 class EventCreateForm(forms.ModelForm):
     age_groups = forms.ModelMultipleChoiceField(
@@ -38,8 +40,8 @@ class EventCreateForm(forms.ModelForm):
             'name': 'Event Name',
             'description': 'Description',
             'photo': 'Event Photo',
-            'start_datetime': 'Start Date & Time',
-            'end_datetime': 'End Date & Time',
+            'start_datetime': 'Start Date & Time (in your local time)',
+            'end_datetime': 'End Date & Time (in your local time)',
             'fee': 'Event Fee (0 for free)',
             'location': 'Location',
             'tickets_available': 'Number of Tickets Available',
@@ -50,29 +52,46 @@ class EventCreateForm(forms.ModelForm):
             'super_powers': 'Super Powers',
         }
 
+    def __init__(self, *args, vendor=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.vendor = vendor
+
     def clean(self):
         cleaned_data = super().clean()
         format_type = cleaned_data.get('format_type')
+        start_datetime = cleaned_data.get('start_datetime')
+        end_datetime = cleaned_data.get('end_datetime')
+
         if format_type != '5-min-play':
-            if not cleaned_data.get('start_datetime'):
+            if not start_datetime:
                 self.add_error('start_datetime', "This field is required for non-5-min plays.")
-            if not cleaned_data.get('end_datetime'):
+            if not end_datetime:
                 self.add_error('end_datetime', "This field is required for non-5-min plays.")
-        return cleaned_data        
+            if start_datetime and end_datetime and start_datetime >= end_datetime:
+                self.add_error('end_datetime', "End time must be after start time.")
+
+        # Convert local times to UTC based on vendor's timezone (FIX: Use VendorProfile directly)
+        if self.vendor and start_datetime and end_datetime:
+            # Changed to vendor.vendor_profile.timezone_name (primary source for vendors)
+            vendor_tz_str = self.vendor.vendor_profile.timezone_name or 'UTC'
+            try:
+                vendor_tz = pytz.timezone(vendor_tz_str)
+            except pytz.UnknownTimeZoneError:
+                vendor_tz = pytz.timezone('UTC')
+            # Ensure start_datetime and end_datetime are naive (strip tzinfo if present)
+            if start_datetime.tzinfo is not None:
+                start_datetime = start_datetime.replace(tzinfo=None)
+            if end_datetime.tzinfo is not None:
+                end_datetime = end_datetime.replace(tzinfo=None)
+            # Localize to vendor's timezone and convert to UTC
+            cleaned_data['start_datetime'] = vendor_tz.localize(start_datetime).astimezone(pytz.UTC)
+            cleaned_data['end_datetime'] = vendor_tz.localize(end_datetime).astimezone(pytz.UTC)
+
+        return cleaned_data
 
 class EventUpdateForm(EventCreateForm):
     class Meta(EventCreateForm.Meta):
         exclude = ['vendor']
-
-    def clean(self):
-        cleaned_data = super().clean()
-        format_type = cleaned_data.get('format_type')
-        if format_type != '5-min-play':
-            if not cleaned_data.get('start_datetime'):
-                self.add_error('start_datetime', "This field is required for non-5-min plays.")
-            if not cleaned_data.get('end_datetime'):
-                self.add_error('end_datetime', "This field is required for non-5-min plays.")
-        return cleaned_data  
 
 class EventFilterForm(forms.Form):
     age_groups = forms.MultipleChoiceField(

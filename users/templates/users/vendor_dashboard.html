@@ -6,20 +6,21 @@
 {% block content %}
 
 <h1>{{ message }}</h1>
-<p>Store: {{ vendor.store_name }}</p>
+<p>Mindset Education Provider: <strong>{{ vendor.store_name }}</strong> </p>
 
+
+<h2>Your Activities</h2>
 {% if vendor.is_approved %}
-    <a href="{% url 'create_event' %}" class="event-card-actions" style="margin: 0 0 24px 0;">Create New Event</a>
+    <a href="{% url 'create_event' %}" class="event-card-actions" style="margin: 0 0 24px 0;"> + Create New Activities</a>
 {% else %}
-    <p style="color:red;"> Your account is pending approval. You cannot create new events yet.</p>
+    <p style="color:red;"> Your account is pending approval. You cannot create new activities yet.</p>
 {% endif %}
 
-<h2>Your Events</h2>
 <ul class="event-grid">
     {% for event in events %}
     <li class="event-card">
         {% if event.photo %}
-          <img src="{{ event.photo.url }}" class="event-card-photo" alt="{{ event.name }}">
+          <img src="{{ event.photo }}" class="event-card-photo" alt="{{ event.name }}">
         {% else %}
           <div class="event-card-photo" style="display:flex;align-items:center;justify-content:center;color:#c9c9d6;font-size:1.3em;">No Photo</div>
         {% endif %}
@@ -35,9 +36,9 @@
         </div>
     </li>
     {% empty %}
-    <li>No events yet.
+    <li>No activities yet.
         {% if vendor.is_approved %}
-            <a href="{% url 'create_event' %}">Create one</a>
+            <a href="{% url 'create_event' %}"> + Create Activities</a>
         {% endif %}
     </li>
     {% endfor %}
@@ -45,26 +46,58 @@
 
 <h2>Your 5-Min Fun</h2>
     {% if vendor.is_approved and vendor.can_create_five_min_fun %}
-        <a href="{% url 'create_five_min_fun' %}">Create 5-Min Fun</a>
+        <a href="{% url 'create_five_min_fun' %}"> + Create 5-Min Fun</a>
     {% else %}
             <p style="color:rgb(192, 0, 45);">Please contact us if you need to create "5-Min Fun"</p>
     {% endif %}  
-<ul>
+
+    <ul class="event-grid">
     {% for fun in five_min_funs %}
-        <li>{{ fun.name }} <a href="{% url 'manage_five_min_fun' fun.id %}">Manage</a> <a href="{% url 'delete_five_min_fun' fun.id %}">Delete</a></li>
+        <li class="event-card">
+        {% if fun.photo %}
+          <img src="{{ fun.photo }}" class="event-card-photo" alt="{{ event.name }}">
+        {% else %}
+          <div class="event-card-photo" style="display:flex;align-items:center;justify-content:center;color:#c9c9d6;font-size:1.3em;">No Photo</div>
+        {% endif %}
+        <div class="event-card-content">
+          <div class="event-card-title">{{ fun.name }}</div>
+          <div class="event-card-actions">
+            <a href="{% url 'manage_five_min_fun' fun.id %}">Manage</a>
+            <a href="{% url 'delete_five_min_fun' fun.id %}">Delete</a>
+            <a href="{% url 'five_min_fun_detail' fun.slug %}" style="background: #7d4896;">View as User</a>
+          </div>
+        </div>
+        </li>
     {% endfor %}
 </ul>
 
+
 <h2>Routines</h2>
-    {% if vendor.is_approved and vendor.can_create_routine %}
-        <a href="{% url 'create_routine' %}">Create Routine</a>
-    {% else %}
-            <p style="color:rgb(192, 0, 45);">Please contact us if you need to create Rountines</p>
-    {% endif %} 
-<ul>
+{% if vendor.is_approved and vendor.can_create_routine %}
+    <a href="{% url 'create_routine' %}"> + Create Routine</a>
+{% else %}
+    <p style="color:rgb(192, 0, 45);">Please contact us if you need to create Routines</p>
+{% endif %} 
+
+<ul class="event-grid">
     {% for routine in routines %}
-        <li>{{ routine.name }} <a href="{% url 'manage_routine' routine.id %}">Manage</a> <a href="{% url 'delete_routine' routine.id %}">Delete</a></li>
+        <li class="event-card">
+            {% if routine.photo %}
+                <img src="{{ routine.photo }}" class="event-card-photo" alt="{{ routine.name }}">
+            {% else %}
+                <div class="event-card-photo" style="display:flex;align-items:center;justify-content:center;color:#c9c9d6;font-size:1.3em;">No Photo</div>
+            {% endif %}
+            <div class="event-card-content">
+                <div class="event-card-title">{{ routine.name }}</div>
+                <div class="event-card-actions">
+                    <a href="{% url 'manage_routine' routine.id %}">Manage</a>
+                    <a href="{% url 'delete_routine' routine.id %}">Delete</a>
+                    <a href="{% url 'routine_detail' routine.slug %}" style="background: #7d4896;">View as User</a>
+                </div>
+            </div>
+        </li>
     {% endfor %}
 </ul>
+
 
 {% endblock %}

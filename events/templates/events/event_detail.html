@@ -24,7 +24,7 @@
 {% if already_registered %}
   <p>You are already registered for this event.</p>
 {% else %}
-  {% if tickets_left > 0 %}
+  {% if not is_past and tickets_left > 0 %}  <!-- FIXED: Add not is_past -->
     <h2>Register</h2>
     <form method="post">
       {% csrf_token %}
@@ -40,6 +40,8 @@
       {% endfor %}
       <button type="submit">Register</button>
     </form>
+  {% elif is_past %}
+    <p>Event has already started (past event).</p>
   {% else %}
     <p>No tickets left.</p>
   {% endif %}

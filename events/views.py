@@ -1,5 +1,5 @@
 
-#events/views.py
+# events/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -16,13 +16,33 @@ from django.db.utils import IntegrityError
 import json
 from datetime import timedelta, date
 from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY
+import pytz
+import requests
+from datetime import datetime
+from users.utils import get_current_utc
 
 logger = logging.getLogger(__name__)
 
 # Generate RoutineInstances based on frequency (EXTENDED: next 12 months)
 def generate_routine_instances(assignment, kid):
-    today = date.today()
-    end_date = today + timedelta(days=365)  # EXTENDED: 12 months ahead
+    # FIXED: Compute today using the caregiver's stored timezone (not server time)
+    user = assignment.caregiver
+    try:
+        tz_str = user.userprofile.timezone_name
+    except AttributeError:
+        tz_str = 'UTC'  # Fallback if no profile or timezone
+    if not tz_str:
+        tz_str = 'UTC'
+    try:
+        user_tz = pytz.timezone(tz_str)
+    except pytz.UnknownTimeZoneError:
+        user_tz = pytz.UTC
+    
+    now = timezone.now()  # UTC now
+    user_now = now.astimezone(user_tz)  # Convert to user's local time
+    today = user_now.date()  # User's local today
+    
+    end_date = today + timedelta(days=365)  # 12 months ahead
     # Delete future instances (date >= today) for this SPECIFIC assignment and kid to prevent duplicates, keep past ones
     RoutineInstance.objects.filter(assignment=assignment, kid=kid, date__gte=today).delete()
     if assignment.frequency == 'daily':
@@ -53,21 +73,22 @@ def create_event(request):
         messages.error(request, "Profile not found. Please complete signup.")
         return redirect('vendor_dashboard')
     if request.method == 'POST':
-        form = EventCreateForm(request.POST)
+        form = EventCreateForm(request.POST, vendor=request.user)
         if form.is_valid():
             event = form.save(commit=False)
             event.vendor = request.user
+            event.created_at = get_current_utc()  # Set real UTC
             event.save()
             form.save_m2m()  # For M2M age/super
             messages.success(request, "Event created successfully!")
             return redirect('vendor_dashboard')
     else:
-        form = EventCreateForm()
+        form = EventCreateForm(vendor=request.user)
     return render(request, 'events/create_event.html', {'form': form})
 
 def event_list(request):
-    now = timezone.now()
-    events = Event.objects.filter(is_active=True, end_datetime__gt=now).order_by('start_datetime')
+    now = get_current_utc()  # FIXED: Use get_current_utc() for real UTC, like registration
+    events = Event.objects.filter(is_active=True, start_datetime__gte=now).order_by('start_datetime')
     five_min_funs = FiveMinFun.objects.filter(is_active=True).order_by('-created_at')
     age_ids = request.GET.getlist('age_groups')
     format_type = request.GET.get('format_type')  # Single
@@ -87,7 +108,24 @@ def event_list(request):
         five_min_funs = five_min_funs.filter(super_powers__id__in=power_ids)
     filter_form = EventFilterForm(request.GET)
     items = []
+    # Determine user's timezone explicitly from profile (or fallback)
+    if request.user.is_authenticated:
+        try:
+            tz_str = request.user.userprofile.timezone_name
+        except AttributeError:
+            tz_str = None
+    else:
+        tz_str = None
+    if not tz_str:
+        tz_str = request.session.get('user_timezone', 'UTC')
+    try:
+        user_tz = pytz.timezone(tz_str)
+    except pytz.UnknownTimeZoneError:
+        user_tz = pytz.UTC
+    # Attach localized start_datetime to each event
     for e in events:
+        if e.start_datetime:
+            e.local_start_datetime = e.start_datetime.astimezone(user_tz)
         e.type = 'event'
         items.append(e)
     for f in five_min_funs:
@@ -101,7 +139,7 @@ def event_list(request):
             "lng": event.longitude,
             "id": event.id,
             "location": event.location,
-            "start_datetime": event.start_datetime.strftime("%Y-%m-%d %H:%M"),
+            "start_datetime": event.start_datetime.astimezone(user_tz).strftime("%Y-%m-%d %H:%M") if event.start_datetime else "",
             "detail_url": f"/events/{event.slug}/",
         }
         for event in events if event.latitude is not None and event.longitude is not None
@@ -132,7 +170,7 @@ def manage_event(request, event_id):
         registration_count = tickets_registered
     tickets_left = event.tickets_available - tickets_registered
     if request.method == 'POST':
-        form = EventUpdateForm(request.POST, instance=event)
+        form = EventUpdateForm(request.POST, instance=event, vendor=request.user)
         if form.is_valid():
             event = form.save(commit=False)
             event.vendor = request.user
@@ -141,7 +179,7 @@ def manage_event(request, event_id):
             messages.success(request, "Event updated successfully!")
             return redirect('manage_event', event_id=event.id)
     else:
-        form = EventUpdateForm(instance=event)
+        form = EventUpdateForm(instance=event, vendor=request.user)
     return render(request, 'events/manage_event.html', {
         'event': event,
         'form': form,
@@ -170,30 +208,47 @@ def event_detail(request, slug):
     show_kids = not is_caregiver_only  # FIXED: Show kids unless pure caregiver
     already_registered = registrations.filter(caregivers__in=caregivers).exists()
 
+    # FIXED: Use get_current_utc() for real UTC check, like registration
+    is_past = get_current_utc() > event.start_datetime if event.start_datetime else False
+
     can_complete_today = False
     available_kids = []
     if request.user.is_authenticated and event.format_type == '5-min-play':
-        today = timezone.now().date()
+        # FIXED: Use user's timezone for today
+        try:
+            tz_str = request.user.userprofile.timezone_name
+        except AttributeError:
+            tz_str = 'UTC'
+        if not tz_str:
+            tz_str = 'UTC'
+        try:
+            user_tz = pytz.timezone(tz_str)
+        except pytz.UnknownTimeZoneError:
+            user_tz = pytz.UTC
+        now = timezone.now()
+        user_now = now.astimezone(user_tz)
+        today = user_now.date()
+        
         completed_kid_ids = KidEventCompletion.objects.filter(
             event=event, date_completed=today, kid__caregiver=request.user
         ).values_list('kid__id', flat=True)
         available_kids = kids.exclude(id__in=completed_kid_ids)
         can_complete_today = available_kids.exists()
-
-    if request.method == 'POST' and not already_registered and tickets_left > 0:
+    
+    if request.method == 'POST' and not already_registered and tickets_left > 0 and not is_past:  # FIXED: Add not is_past to POST check
         if is_caregiver_only:  # FIXED: Pure caregiver only
             selected_caregiver_ids = request.POST.getlist('caregivers')
             if not selected_caregiver_ids:
                 return render(request, 'events/event_detail.html', {
                     'event': event, 'kids': kids, 'caregivers': caregivers, 'error': 'Please select at least one caregiver.',
                     'already_registered': already_registered, 'tickets_left': tickets_left, 'show_kids': show_kids, 'can_complete_today': can_complete_today, 'available_kids': available_kids,
-                    'selected_ages': selected_ages, 'selected_powers': selected_powers,
+                    'selected_ages': selected_ages, 'selected_powers': selected_powers, 'is_past': is_past,
                 })
             if len(selected_caregiver_ids) > tickets_left:
                 return render(request, 'events/event_detail.html', {
                     'event': event, 'kids': kids, 'caregivers': caregivers, 'error': 'Not enough tickets for that many caregivers.',
                     'already_registered': already_registered, 'tickets_left': tickets_left, 'show_kids': show_kids, 'can_complete_today': can_complete_today, 'available_kids': available_kids,
-                    'selected_ages': selected_ages, 'selected_powers': selected_powers,
+                    'selected_ages': selected_ages, 'selected_powers': selected_powers, 'is_past': is_past,
                 })
             registration = EventRegistration.objects.create(event=event)
             registration.caregivers.set(selected_caregiver_ids)
@@ -205,14 +260,14 @@ def event_detail(request, slug):
                 return render(request, 'events/event_detail.html', {
                     'event': event, 'kids': kids, 'caregivers': caregivers, 'error': 'Select at least one kid or caregiver.',
                     'already_registered': already_registered, 'tickets_left': tickets_left, 'show_kids': show_kids, 'can_complete_today': can_complete_today, 'available_kids': available_kids,
-                    'selected_ages': selected_ages, 'selected_powers': selected_powers,
+                    'selected_ages': selected_ages, 'selected_powers': selected_powers, 'is_past': is_past,
                 })
             num_requested = len(selected_kids_ids)  # FIXED: Deduct only kids (ignore caregivers)
             if num_requested > tickets_left:
                 return render(request, 'events/event_detail.html', {
                     'event': event, 'kids': kids, 'caregivers': caregivers, 'error': 'Not enough tickets for that many kids.',
                     'already_registered': already_registered, 'tickets_left': tickets_left, 'show_kids': show_kids, 'can_complete_today': can_complete_today, 'available_kids': available_kids,
-                    'selected_ages': selected_ages, 'selected_powers': selected_powers,
+                    'selected_ages': selected_ages, 'selected_powers': selected_powers, 'is_past': is_past,
                 })
             registration = EventRegistration.objects.create(event=event)
             if selected_kids_ids:
@@ -232,6 +287,7 @@ def event_detail(request, slug):
         'available_kids': available_kids,
         'selected_ages': selected_ages,
         'selected_powers': selected_powers,
+        'is_past': is_past,  # FIXED: Pass to template
     })
 
 @login_required
@@ -250,31 +306,94 @@ def delete_event(request, event_id):
 @require_POST
 @login_required
 def mark_caregiver_event_completed(request):
-    caregiver_id = request.POST.get("caregiver_id")
-    event_id = request.POST.get("event_id")
-    event_date = request.POST.get("event_date")
+    # FIXED: Compute default date_completed using user's timezone (not server)
     try:
-        caregiver = FamilyCaregiver.objects.get(id=caregiver_id, user=request.user)
-        event = Event.objects.get(id=event_id)
-        if event.format_type != '5-min-play':
-            if not EventRegistration.objects.filter(event=event, caregivers=caregiver).exists():
-                return JsonResponse({"success": False, "error": "Not registered for this event."})
-        completion, created = CaregiverEventCompletion.objects.get_or_create(
-            caregiver=caregiver,
-            event=event,
-            date_completed=event_date
-        )
-        return JsonResponse({"success": True})
+        tz_str = request.user.userprofile.timezone_name
+    except AttributeError:
+        tz_str = 'UTC'
+    if not tz_str:
+        tz_str = 'UTC'
+    try:
+        user_tz = pytz.timezone(tz_str)
+    except pytz.UnknownTimeZoneError:
+        user_tz = pytz.UTC
+    now = timezone.now()
+    user_now = now.astimezone(user_tz)
+    default_date = user_now.date().isoformat()
+    
+    event_id = request.POST.get('event_id')
+    try:
+        event = get_object_or_404(Event, id=event_id)
+        date_completed = request.POST.get('event_date', default_date)
+        caregiver_ids = request.POST.getlist('caregiver_ids[]')
+        if not caregiver_ids:
+            caregiver_id = request.POST.get('caregiver_id')
+            if caregiver_id:
+                caregiver_ids = [caregiver_id]
+        if not caregiver_ids:
+            return JsonResponse({'success': False, 'error': 'No caregivers selected.'})
+        created_count = 0
+        already_completed = []
+        not_registered = []
+        for cg_id in caregiver_ids:
+            try:
+                cg_id = int(cg_id)
+            except ValueError:
+                not_registered.append(cg_id)  # Skip invalid non-numbers
+                continue
+            caregiver = get_object_or_404(FamilyCaregiver, id=cg_id, user=request.user)
+            if event.format_type != '5-min-play':
+                if not EventRegistration.objects.filter(event=event, caregivers=caregiver).exists():
+                    not_registered.append(caregiver.first_name)
+                    continue
+            completion, created = CaregiverEventCompletion.objects.get_or_create(
+                caregiver=caregiver, event=event, date_completed=date_completed
+            )
+            if created:
+                created_count += 1
+            else:
+                already_completed.append(caregiver.first_name)
+        if created_count > 0:
+            message = f"Marked as completed for {created_count} caregiver(s)!"
+            if already_completed:
+                message += f" Skipped already completed: {', '.join(already_completed)}"
+            if not_registered:
+                message += f" Skipped not registered/invalid: {', '.join(not_registered)}"
+            return JsonResponse({'success': True, 'message': message})
+        else:
+            error_msg = ""
+            if already_completed:
+                error_msg += f"Already completed: {', '.join(already_completed)}. "
+            if not_registered:
+                error_msg += f"Not registered/invalid: {', '.join(not_registered)}."
+            if not error_msg:
+                error_msg = "Unknown error."
+            return JsonResponse({'success': False, 'error': error_msg})
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @require_POST
 @login_required
 def mark_kid_event_completed(request):
+    # FIXED: Compute default date_completed using user's timezone (not server)
+    try:
+        tz_str = request.user.userprofile.timezone_name
+    except AttributeError:
+        tz_str = 'UTC'
+    if not tz_str:
+        tz_str = 'UTC'
+    try:
+        user_tz = pytz.timezone(tz_str)
+    except pytz.UnknownTimeZoneError:
+        user_tz = pytz.UTC
+    now = timezone.now()
+    user_now = now.astimezone(user_tz)
+    default_date = user_now.date().isoformat()
+    
     event_id = request.POST.get('event_id')
     try:
         event = get_object_or_404(Event, id=event_id)
-        date_completed = request.POST.get('event_date', timezone.now().date().isoformat())
+        date_completed = request.POST.get('event_date', default_date)
         kid_ids = request.POST.getlist('kid_ids[]')
         if not kid_ids:
             kid_id = request.POST.get('kid_id')
@@ -404,12 +523,27 @@ def five_min_fun_detail(request, slug):
     can_complete_today = False
     available_kids = []
     if request.user.is_authenticated:
-        today = timezone.now().date()
+        # FIXED: Use user's timezone for today
+        try:
+            tz_str = request.user.userprofile.timezone_name
+        except AttributeError:
+            tz_str = 'UTC'
+        if not tz_str:
+            tz_str = 'UTC'
+        try:
+            user_tz = pytz.timezone(tz_str)
+        except pytz.UnknownTimeZoneError:
+            user_tz = pytz.UTC
+        now = timezone.now()
+        user_now = now.astimezone(user_tz)
+        today = user_now.date()
+        
         completed_kid_ids = KidFiveMinFunCompletion.objects.filter(
             five_min_fun=five_min_fun, date_completed=today, kid__caregiver=request.user
         ).values_list('kid__id', flat=True)
         available_kids = kids.exclude(id__in=completed_kid_ids)
         can_complete_today = available_kids.exists()
+
     return render(request, 'events/five_min_fun_detail.html', {
         'five_min_fun': five_min_fun,
         'assigned_routines': assigned_routines,
@@ -422,10 +556,24 @@ def five_min_fun_detail(request, slug):
 @require_POST
 @login_required
 def mark_kid_five_min_fun_completed(request):
+    # FIXED: Compute today using user's timezone (not server)
+    try:
+        tz_str = request.user.userprofile.timezone_name
+    except AttributeError:
+        tz_str = 'UTC'
+    if not tz_str:
+        tz_str = 'UTC'
+    try:
+        user_tz = pytz.timezone(tz_str)
+    except pytz.UnknownTimeZoneError:
+        user_tz = pytz.UTC
+    now = timezone.now()
+    user_now = now.astimezone(user_tz)
+    today = user_now.date()
+    
     five_min_fun_id = request.POST.get('five_min_fun_id')
     try:
         five_min_fun = get_object_or_404(FiveMinFun, id=five_min_fun_id)
-        today = timezone.now().date()
         kid_ids = request.POST.getlist('kid_ids[]')  # FIXED: Use 'kid_ids[]'
         if not kid_ids:
             return JsonResponse({'success': False, 'error': 'No kids selected.'})
@@ -451,26 +599,6 @@ def mark_kid_five_min_fun_completed(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-# Generate RoutineInstances based on frequency (MVP: next 30 days)
-def generate_routine_instances(assignment, kid):
-    today = date.today()
-    end_date = today + timedelta(days=365)  # MVP limit
-    # Delete future instances (date >= today) for this SPECIFIC assignment and kid to prevent duplicates, keep past ones
-    RoutineInstance.objects.filter(assignment=assignment, kid=kid, date__gte=today).delete()
-    if assignment.frequency == 'daily':
-        dates = rrule(DAILY, dtstart=today, until=end_date)
-    elif assignment.frequency == 'weekly':
-        weekday_map = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5, 'Sunday': 6}
-        weekday = weekday_map.get(assignment.day, 0)
-        dates = rrule(WEEKLY, dtstart=today, until=end_date, byweekday=weekday)
-    elif assignment.frequency == 'monthly':
-        day = int(assignment.day) if assignment.day.isdigit() else 1
-        dates = rrule(MONTHLY, dtstart=today, until=end_date, bymonthday=day)
-    else:
-        return
-    for dt in dates:
-        RoutineInstance.objects.get_or_create(assignment=assignment, kid=kid, date=dt.date())
-        
 # Vendor Create Routine - Added approval check
 @login_required
 def create_routine(request):
@@ -666,12 +794,18 @@ def mark_kid_routine_completed(request):
         routine_instance_id = request.POST.get('routine_instance_id')
         try:
             instance = get_object_or_404(RoutineInstance, id=routine_instance_id, kid__caregiver=request.user)
+            completion, created = KidRoutineCompletion.objects.get_or_create(
+                kid=instance.kid, routine_instance=instance,
+                defaults={'date_completed': instance.date}  # FIXED: Set to instance.date (user-local date)
+            )
+            # Always ensure completed is True (fixes inconsistencies)
             if not instance.completed:
-                KidRoutineCompletion.objects.create(kid=instance.kid, routine_instance=instance)
                 instance.completed = True
                 instance.save()
+            if created:
                 return JsonResponse({'success': True})
-            return JsonResponse({'success': False, 'error': 'Already completed.'})
+            else:
+                return JsonResponse({'success': False, 'error': 'Already completed.'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request.'})
@@ -744,4 +878,23 @@ def assign_routine_from_fun(request, fun_id, routine_id):
         'form': form,
         'existing_assignment': existing_assignment,
         'selected_kid_id': selected_kid_id,
+    })
+
+@login_required
+def get_routine_instance(request, instance_id):
+    instance = get_object_or_404(RoutineInstance, id=instance_id, kid__caregiver=request.user)
+    assignment = instance.assignment
+    name = assignment.routine.name if assignment.routine else assignment.five_min_fun.name
+    desc = assignment.routine.instructions if assignment.routine else assignment.five_min_fun.instructions
+    return JsonResponse({
+        'success': True,
+        'name': name,
+        'desc': desc,
+        'type': 'routine',
+        'id': instance.id,
+        'date': instance.date.isoformat(),
+        'datetime': 'Anytime — Anytime',
+        'location': 'N/A',
+        'utc_start': '',
+        'kid_id': instance.kid.id,
     })

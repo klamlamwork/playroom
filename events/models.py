@@ -30,11 +30,11 @@ FORMAT_CHOICES = [
 
 class Event(models.Model):
     name = models.CharField(max_length=255)
-    start_datetime = models.DateTimeField()
+    start_datetime = models.DateTimeField(null=True, blank=True)
+    end_datetime = models.DateTimeField(null=True, blank=True)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
     photo = models.URLField(blank=True, null=True)
-    end_datetime = models.DateTimeField()
     fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, validators=[MinValueValidator(0)])
     location = models.TextField()
     latitude = models.FloatField(null=True, blank=True)
@@ -46,7 +46,7 @@ class Event(models.Model):
     place = models.CharField(max_length=20, choices=[('indoor', 'Indoor'), ('outdoor', 'Outdoor')], default='indoor')
     super_powers = models.ManyToManyField(SuperPower, blank=True)  # Multi
     vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='events', limit_choices_to={'userprofile__role': 'vendor'})
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(null=True, blank=True)  # CHANGED: Remove auto_now_add, set manually
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     class Meta:
@@ -101,7 +101,7 @@ class FiveMinFun(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     photo = models.URLField(blank=True, null=True)
     instructions = models.TextField()
-    audio = models.FileField(upload_to='five_min_fun_audio/', blank=True, null=True)
+    audio = models.URLField(blank=True, null=True)
     tags = models.CharField(max_length=255, blank=True)
     age_groups = models.ManyToManyField(AgeGroup, blank=True)  # Multi
     format_type = models.CharField(max_length=20, choices=FORMAT_CHOICES, default='workshop', blank=True)  # Single
@@ -192,7 +192,7 @@ class RoutineInstance(models.Model):
 class KidRoutineCompletion(models.Model):
     kid = models.ForeignKey('users.KidProfile', on_delete=models.CASCADE, related_name="kid_routine_completions")
     routine_instance = models.ForeignKey(RoutineInstance, on_delete=models.CASCADE, related_name="completions")
-    date_completed = models.DateField(auto_now_add=True)
+    date_completed = models.DateField()  # FIXED: Remove auto_now_add=True to set manually
 
     class Meta:
         unique_together = ('kid', 'routine_instance')
@@ -200,3 +200,36 @@ class KidRoutineCompletion(models.Model):
     def __str__(self):
         item_name = self.routine_instance.assignment.routine.name if self.routine_instance.assignment.routine else self.routine_instance.assignment.five_min_fun.name
         return f"{self.kid} completed {item_name} on {self.date_completed}"
+
+class Course(models.Model):
+    name = models.CharField(max_length=255, default="Kid's Foundation Journey")
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+class Level(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='levels')
+    number = models.PositiveIntegerField()  # e.g., 1, 2, 3
+    title = models.CharField(max_length=100, default="Level")
+    description = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ['number']
+
+    def __str__(self):
+        return f"{self.title} {self.number} ({self.course})"
+
+class RoadmapPoint(models.Model):
+    level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name='points')
+    position = models.PositiveIntegerField()  # Order on the roadmap, e.g., 1, 2, ...
+    five_min_fun = models.ForeignKey(FiveMinFun, on_delete=models.SET_NULL, null=True, blank=True)
+    description = models.TextField(blank=True)  # Optional note for the point
+
+    class Meta:
+        ordering = ['position']
+        unique_together = ('level', 'position')
+
+    def __str__(self):
+        return f"Point {self.position} in {self.level}"

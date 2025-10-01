@@ -1,11 +1,81 @@
+
+<!--users/templates/users/signup_step1.html--> 
 {% extends "base.html" %}
-
 {% block title %}Signup | Mindset Playroom{% endblock %}
-
 {% block content %}
 <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}  <!-- Renders form fields -->
+    {{ form.as_p }}  
     <button type="submit">Next</button>
 </form>
+
+<datalist id="city-suggestions"></datalist>
+<script>
+    // Initialize custom autocomplete for the city field using Nominatim proxy
+    var input = document.getElementById('id_city');
+    var datalist = document.getElementById('city-suggestions');
+    var places = [];  // To store the latest search results
+    var timeout;  // For debouncing
+
+    // Function to search for cities using Nominatim proxy
+    function searchCities(query) {
+        fetch(`/nominatim-proxy/?q=${encodeURIComponent(query)}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Proxy error: ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            datalist.innerHTML = '';
+            // Filter for administrative boundaries (cities/towns/regions)
+            places = data.filter(place => 
+                place.class === 'boundary' && place.type === 'administrative'
+            );
+            places.forEach(place => {
+                var option = document.createElement('option');
+                option.value = place.display_name;
+                datalist.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching from Nominatim proxy:', error);
+        });
+    }
+
+    // Debounce input to avoid too many requests
+    input.addEventListener('input', function() {
+        clearTimeout(timeout);
+        var query = this.value.trim();
+        if (query.length > 2) {
+            timeout = setTimeout(() => searchCities(query), 300);
+        } else {
+            datalist.innerHTML = '';
+            places = [];
+        }
+    });
+
+    // When a place is selected (on change), parse city and country, set lat/lon, and set fields without confirmation
+    input.addEventListener('change', function() {
+        var selectedValue = this.value.trim();
+        var selectedPlace = places.find(place => place.display_name === selectedValue);
+        if (selectedPlace) {
+            // Use 'name' for clean city name (English-preferred), fallback to other address keys
+            var city = selectedPlace.name || selectedPlace.address.city || selectedPlace.address.town || selectedPlace.address.village || selectedPlace.address.locality || selectedPlace.address.state || selectedPlace.address.region || '';
+            var country = selectedPlace.address.country || '';
+            if (city && country) {
+                this.value = city;  // Set to clean city name
+                document.getElementById('id_country').value = country;
+                document.getElementById('id_latitude').value = selectedPlace.lat;  // NEW
+                document.getElementById('id_longitude').value = selectedPlace.lon;  // NEW
+            } else {
+                this.value = '';
+                document.getElementById('id_country').value = '';
+                document.getElementById('id_latitude').value = '';  // NEW
+                document.getElementById('id_longitude').value = '';  // NEW
+                this.focus();
+            }
+        }
+    });
+</script>
 {% endblock %}

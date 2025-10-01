@@ -56,7 +56,7 @@
 <div class="routine-details">
   <h1>{{ item.name }}</h1>
   {% if item.photo %}
-    <img src="{{ item.photo.url }}" alt="{{ item.name }}">
+    <img src="{{ item.photo }}" alt="{{ item.name }}">
   {% endif %}
   <p>{{ item.instructions|safe }}</p>
   <p><strong>Age Group:</strong> {{ item.get_age_group_display }}</p>

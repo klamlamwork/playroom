@@ -3,8 +3,13 @@ from django.contrib import admin
 from .models import (
     Event, EventRegistration, CaregiverEventCompletion, KidEventCompletion,
     FiveMinFun, KidFiveMinFunCompletion, Routine, KidRoutineAssignment,
-    RoutineInstance, KidRoutineCompletion, AgeGroup, SuperPower  # REMOVED: FormatType
+    RoutineInstance, KidRoutineCompletion, AgeGroup, SuperPower,Course, Level, RoadmapPoint  # REMOVED: FormatType
 )
+
+admin.site.register(Course)
+admin.site.register(Level)
+admin.site.register(RoadmapPoint)
+
 
 @admin.register(AgeGroup)
 class AgeGroupAdmin(admin.ModelAdmin):

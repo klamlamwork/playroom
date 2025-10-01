@@ -13,4 +13,5 @@ urlpatterns = [
     path('become-vendor/', views.become_vendor, name='become_vendor'),
     path('vendor-dashboard/', views.vendor_dashboard, name='vendor_dashboard'),
     path('logout/', views.user_logout, name='logout'),
+    path('nominatim-proxy/', views.nominatim_proxy, name='nominatim_proxy'),
 ]

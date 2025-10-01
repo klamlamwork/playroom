@@ -1,0 +1,125 @@
+
+<!-- templates/chatbot/chat.html -->
+{% extends "base.html" %}
+{% block title %}Chatbot{% endblock %}
+{% block content %}
+<h1>Chatbot (Direct Access - Use Popup for Best Experience)</h1>
+<div id="chat-message">{{ message | safe }}</div>
+<form id="chat-form" method="post" style="display: none;">  <!-- Hidden form for CSRF only -->
+    {% csrf_token %}
+</form>
+<div id="chat-options">
+    {% if step == 'q1' %}
+        <h3>Caregivers:</h3>
+        {% for cg in caregivers %}
+            <input type="checkbox" name="caregivers" value="{{ cg.id }}"> {{ cg.name }}<br><br>
+        {% endfor %}
+        <h3>Kids:</h3>
+        {% for kid in kids %}
+            <input type="checkbox" name="kids" value="{{ kid.id }}"> {{ kid.name }}<br>
+        {% endfor %}
+        <button type="button" onclick="submitSelections()">Submit</button>
+    {% else %}
+        {% for value, label in options %}
+            <button type="button" onclick="submitChoice('{{ value }}')">{{ label }}</button><br>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<script>
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+
+    function submitChoice(value) {
+        fetch('{% url "chatbot" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+                'x-requested-with': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({choice: value})
+        }).then(response => response.json())
+          .then(data => updateChat(data))
+          .catch(error => {
+              console.error('Error:', error);
+              document.getElementById('chat-message').innerHTML = 'Error loading chat. Please try again.';
+          });
+    }
+
+    function submitSelections() {
+        const caregivers = Array.from(document.querySelectorAll('input[name="caregivers"]:checked')).map(input => input.value);
+        const kids = Array.from(document.querySelectorAll('input[name="kids"]:checked')).map(input => input.value);
+        fetch('{% url "chatbot" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+                'x-requested-with': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({caregivers, kids})
+        }).then(response => response.json())
+          .then(data => updateChat(data))
+          .catch(error => {
+              console.error('Error:', error);
+              document.getElementById('chat-message').innerHTML = 'Error loading chat. Please try again.';
+          });
+    }
+
+    function submitTimes() {
+        const start_time = document.getElementById('start_time').value;
+        const end_time = document.getElementById('end_time').value;
+        if (!start_time || !end_time) {
+            alert('Please select start and end times.');
+            return;
+        }
+        fetch('{% url "chatbot" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+                'x-requested-with': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({start_time, end_time})
+        }).then(response => response.json())
+          .then(data => updateChat(data))
+          .catch(error => {
+              console.error('Error:', error);
+              document.getElementById('chat-message').innerHTML = 'Error loading chat. Please try again.';
+          });
+    }
+
+    function updateChat(data) {
+        document.getElementById('chat-message').innerHTML = data.message;
+        const optionsDiv = document.getElementById('chat-options');
+        optionsDiv.innerHTML = '';
+        if (data.step === 'q1') {
+            let html = '<h3>Caregivers:</h3>';
+            data.caregivers.forEach(cg => {
+                html += `<input type="checkbox" name="caregivers" value="${cg.id}"> ${cg.name}<br>`;
+            });
+            html += '<h3>Kids:</h3>';
+            data.kids.forEach(kid => {
+                html += `<input type="checkbox" name="kids" value="${kid.id}"> ${kid.name}<br>`;
+            });
+            html += '<button type="button" onclick="submitSelections()">Submit</button>';
+            optionsDiv.innerHTML = html;
+        } else if (data.input_type === 'datetime') {
+            let html = 'Start: <input type="datetime-local" id="start_time" required><br>';
+            html += 'End: <input type="datetime-local" id="end_time" required><br>';
+            data.options.forEach(opt => {
+                html += `<button type="button" onclick="submitChoice('${opt.value}')">${opt.label}</button><br>`;
+            });
+            html += '<button type="button" onclick="submitTimes()">Submit Times</button>';
+            optionsDiv.innerHTML = html;
+        } else {
+            let html = '';
+            data.options.forEach(opt => {
+                html += `<button type="button" onclick="submitChoice('${opt.value}')">${opt.label}</button><br>`;
+            });
+            optionsDiv.innerHTML = html;
+        }
+    }
+</script>
+{% endblock %}

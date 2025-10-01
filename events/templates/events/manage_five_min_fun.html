@@ -13,28 +13,39 @@
             {% endfor %}
         </ul>
     {% endif %}
-    <form method="post" enctype="multipart/form-data">
+    
         {% csrf_token %}
-        {{ form.name.label_tag }} {{ form.name }}<br>
-        <label for="id_photo">Photo:</label>
-        <button type="button" id="uploadWidget">Upload Photo</button>
-        {{ form.photo }}<br>
-        {{ form.instructions.label_tag }} {{ form.instructions }}<br>
-        {{ form.audio.label_tag }} {{ form.audio }}<br>
-        {{ form.tags.label_tag }} {{ form.tags }}<br>
-        {{ form.age_groups.label_tag }} {{ form.age_groups }}<br>
-        {{ form.format_type.label_tag }} {{ form.format_type }}<br>
-        {{ form.place.label_tag }} {{ form.place }}<br>
-        {{ form.super_powers.label_tag }} {{ form.super_powers }}<br>
-        {{ form.routines.label_tag }} {{ form.routines }}<br>
-        <button type="submit">Update</button>
-    </form>
-    <a href="{% url 'vendor_dashboard' %}">Back to Dashboard</a>
+        {{ form.name.label_tag }} {{ form.name }}
 
+        Photo:
+        <button type="button" id="uploadWidget">Upload Photo</button>
+        {{ form.photo }}
+
+        Audio:
+        <button type="button" id="uploadAudioWidget">Upload Audio</button>
+        {{ form.audio }}
+
+        {{ form.instructions.label_tag }} {{ form.instructions }}
+
+        {{ form.tags.label_tag }} {{ form.tags }}
+
+        {{ form.age_groups.label_tag }} {{ form.age_groups }}
+
+        {{ form.format_type.label_tag }} {{ form.format_type }}
+
+        {{ form.place.label_tag }} {{ form.place }}
+
+        {{ form.super_powers.label_tag }} {{ form.super_powers }}
+
+        {{ form.routines.label_tag }} {{ form.routines }}
+
+        <button type="submit">Update</button>
+    
+    Back to Dashboard
     <script>
         // Cloudinary Upload Widget Integration
         document.addEventListener('DOMContentLoaded', function() {
-            const myWidget = cloudinary.createUploadWidget({
+            const photoWidget = cloudinary.createUploadWidget({
                 cloudName: 'dvrbpkbr7',  // Replace with your Cloudinary cloud name
                 uploadPreset: 'playroom_upload',  // Replace with your unsigned upload preset name
                 sources: ['local', 'url', 'camera'],
@@ -49,7 +60,25 @@
             });
 
             document.getElementById('uploadWidget').addEventListener('click', function() {
-                myWidget.open();
+                photoWidget.open();
+            }, false);
+
+            const audioWidget = cloudinary.createUploadWidget({
+                cloudName: 'dvrbpkbr7',  // Replace with your Cloudinary cloud name
+                uploadPreset: 'playroom_upload',  // Replace with your unsigned upload preset name
+                sources: ['local', 'url'],
+                multiple: false,
+                resourceType: 'video'  // Audio files are uploaded as 'video' resource type in Cloudinary
+            }, (error, result) => {
+                if (!error && result && result.event === "success") {
+                    const uploadedUrl = result.info.secure_url;
+                    document.getElementById('id_audio').value = uploadedUrl;
+                    console.log("Uploaded audio URL:", uploadedUrl);
+                }
+            });
+
+            document.getElementById('uploadAudioWidget').addEventListener('click', function() {
+                audioWidget.open();
             }, false);
         });
     </script>
