@@ -14,24 +14,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read  # This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Debug - List files  # Temporary: To check what's checked out (remove after success)
+        run: ls -la
 
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Create and start virtual environment
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-      
       - name: Install dependencies
-        run: pip install -r requirements.txt
-        
+        run: |
+          pip install -r requirements.txt  # No 'if' needed if requirements.txt always exists; add 'if [ -f ... ]' if optional
+
+      - name: Collect static files  # For Django static handling
+        run: python manage.py collectstatic --noinput
+
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Upload artifact for deployment jobs
@@ -40,7 +42,7 @@ jobs:
           name: python-app
           path: |
             .
-            !venv/
+            !venv/  # Keep this to exclude any accidental venv; it won't exist now
 
   deploy:
     runs-on: ubuntu-latest
@@ -68,4 +70,5 @@ jobs:
         with:
           app-name: 'playspace'
           slot-name: 'Production'
+
           
