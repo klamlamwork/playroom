@@ -4,7 +4,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-my45ums!qnql4+cwj1_d9&o6!^qxsp+5hd0&-h8lf)9_udvy0$'
 DEBUG = False
-ALLOWED_HOSTS = ['playsplace.azurewebsites.net', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['playspace.azurewebsites.net', 'localhost', '127.0.0.1', '*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
