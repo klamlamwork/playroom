@@ -21,6 +21,15 @@ class CaregiverSignupForm(UserCreationForm):
     country = forms.CharField(max_length=100, widget=forms.HiddenInput(), required=False)  # Hidden for country
     latitude = forms.FloatField(widget=forms.HiddenInput(), required=False)  
     longitude = forms.FloatField(widget=forms.HiddenInput(), required=False)  
+
+    #Jun13,2026
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Remove help text for the username and password fields
+        self.fields['username'].help_text = ''
+        self.fields['password1'].help_text = ''
+        self.fields['password2'].help_text = ''
+        
     class Meta:
         model = User
         fields = ('username', 'password1', 'password2', 'first_name', 'last_name')  # Removed 'email'
