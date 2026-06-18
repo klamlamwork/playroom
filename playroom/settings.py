@@ -1,11 +1,15 @@
 
 # playroom/settings.py (add the new middleware after TimezoneMiddleware to override for admin)
 import dj_database_url
+import os
 from pathlib import Path
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-my45ums!qnql4+cwj1_d9&o6!^qxsp+5hd0&-h8lf)9_udvy0$'
 DEBUG = False
-ALLOWED_HOSTS = ['playspace.azurewebsites.net', 'localhost', '127.0.0.1', '*']
+
+# Added your Render URL to allowed hosts just in case
+ALLOWED_HOSTS = ['playspace.azurewebsites.net', 'playspace-to0j.onrender.com', 'localhost', '127.0.0.1', '*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -53,18 +57,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'playroom.wsgi.application'
 
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-
-
+# This guarantees it connects to Supabase on port 5432
 DATABASES = {
     'default': dj_database_url.parse(
-        "postgresql://postgres.fefywfyrqqjoalubxcou:hPr8dLyOmjRAfvLqZeep0x5jNiEGRHoq@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require"
+        os.environ.get('DATABASE_URL', "postgresql://postgres.fefywfyrqqjoalubxcou:hPr8dLyOmjRAfvLqZeep0x5jNiEGRHoq@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require"),
+        conn_max_age=600,
+        conn_health_checks=True,
     )
 }
-# Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
+# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -80,31 +82,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'America/New_York'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
 STATIC_URL = 'static/'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
-import os
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
