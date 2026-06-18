@@ -70,20 +70,16 @@ class EventCreateForm(forms.ModelForm):
             if start_datetime and end_datetime and start_datetime >= end_datetime:
                 self.add_error('end_datetime', "End time must be after start time.")
 
-        # Convert local times to UTC based on vendor's timezone (FIX: Use VendorProfile directly)
         if self.vendor and start_datetime and end_datetime:
-            # Changed to vendor.vendor_profile.timezone_name (primary source for vendors)
             vendor_tz_str = self.vendor.vendor_profile.timezone_name or 'UTC'
             try:
                 vendor_tz = pytz.timezone(vendor_tz_str)
             except pytz.UnknownTimeZoneError:
                 vendor_tz = pytz.timezone('UTC')
-            # Ensure start_datetime and end_datetime are naive (strip tzinfo if present)
             if start_datetime.tzinfo is not None:
                 start_datetime = start_datetime.replace(tzinfo=None)
             if end_datetime.tzinfo is not None:
                 end_datetime = end_datetime.replace(tzinfo=None)
-            # Localize to vendor's timezone and convert to UTC
             cleaned_data['start_datetime'] = vendor_tz.localize(start_datetime).astimezone(pytz.UTC)
             cleaned_data['end_datetime'] = vendor_tz.localize(end_datetime).astimezone(pytz.UTC)
 
@@ -94,14 +90,14 @@ class EventUpdateForm(EventCreateForm):
         exclude = ['vendor']
 
 class EventFilterForm(forms.Form):
-    age_groups = forms.MultipleChoiceField(
-        choices=[(ag.id, ag.name) for ag in AgeGroup.objects.all()],
+    age_groups = forms.ModelMultipleChoiceField(
+        queryset=AgeGroup.objects.all(),
         required=False,
         widget=forms.CheckboxSelectMultiple,
         label='Age Groups'
     )
-    format_type = forms.ChoiceField(  # Single
-        choices=[('', 'All Formats')] + list(FORMAT_CHOICES),  # FIXED: Use imported FORMAT_CHOICES
+    format_type = forms.ChoiceField(
+        choices=[('', 'All Formats')] + list(FORMAT_CHOICES),
         required=False,
         label='Format Type'
     )
@@ -110,8 +106,8 @@ class EventFilterForm(forms.Form):
         required=False,
         label='Place'
     )
-    super_powers = forms.MultipleChoiceField(
-        choices=[(sp.id, sp.name) for sp in SuperPower.objects.all()],
+    super_powers = forms.ModelMultipleChoiceField(
+        queryset=SuperPower.objects.all(),
         required=False,
         widget=forms.CheckboxSelectMultiple,
         label='Super Powers'
