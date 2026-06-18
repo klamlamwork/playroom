@@ -1,5 +1,6 @@
 
 # playroom/settings.py (add the new middleware after TimezoneMiddleware to override for admin)
+import dj_database_url
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-my45ums!qnql4+cwj1_d9&o6!^qxsp+5hd0&-h8lf)9_udvy0$'
@@ -54,11 +55,12 @@ WSGI_APPLICATION = 'playroom.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.parse(
+        "postgresql://postgres.fefywfyrqqjoalubxcou:hPr8dLyOmjRAfvLqZeep0x5jNiEGRHoq@aws-1-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require"
+    )
 }
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
