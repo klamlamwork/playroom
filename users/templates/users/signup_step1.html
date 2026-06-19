@@ -65,6 +65,7 @@
             var country = selectedPlace.address.country || '';
             if (city && country) {
                 this.value = city;  // Set to clean city name
+                datalist.innerHTML = '';  // Jun19,2026
                 document.getElementById('id_country').value = country;
                 document.getElementById('id_latitude').value = selectedPlace.lat;  // NEW
                 document.getElementById('id_longitude').value = selectedPlace.lon;  // NEW
