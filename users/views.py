@@ -451,3 +451,19 @@ def set_timezone(request):
 
 def get_current_utc_view(request):
     return JsonResponse({'utc_now': get_current_utc().isoformat()})
+
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+
+#Jun19,2026 edit city at my account
+@login_required
+def update_location(request):
+    if request.method == 'POST':
+        user_profile = request.user.userprofile
+        user_profile.city = request.POST.get('city')
+        user_profile.country = request.POST.get('country')
+        user_profile.latitude = request.POST.get('latitude') or None
+        user_profile.longitude = request.POST.get('longitude') or None
+        user_profile.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
