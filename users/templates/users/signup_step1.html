@@ -11,13 +11,12 @@
 
 <datalist id="city-suggestions"></datalist>
 <script>
-    // Initialize custom autocomplete for the city field using Nominatim proxy
     var input = document.getElementById('id_city');
     var datalist = document.getElementById('city-suggestions');
-    var places = []; // To store the latest search results
-    var timeout; // For debouncing
+    var places = [];
+    var timeout;
+    var isValidSelection = false;   // NEW: Track valid selection
 
-    // Function to search for cities
     function searchCities(query) {
         fetch(`/nominatim-proxy/?q=${encodeURIComponent(query)}`)
         .then(response => {
@@ -38,7 +37,6 @@
         .catch(error => console.error('Error fetching cities:', error));
     }
 
-    // Debounce input
     input.addEventListener('input', function() {
         clearTimeout(timeout);
         var query = this.value.trim();
@@ -48,9 +46,10 @@
             datalist.innerHTML = '';
             places = [];
         }
+        isValidSelection = false;   // Reset when typing
     });
 
-    // FIXED: Clear suggestions after selection
+    // When user selects from suggestions
     input.addEventListener('change', function() {
         var selectedValue = this.value.trim();
         var selectedPlace = places.find(place => place.display_name === selectedValue);
@@ -60,30 +59,31 @@
                        selectedPlace.address.city || 
                        selectedPlace.address.town || 
                        selectedPlace.address.village || 
-                       selectedPlace.address.locality || 
-                       selectedPlace.address.state || 
-                       selectedPlace.address.region || '';
+                       selectedPlace.address.locality || '';
 
             var country = selectedPlace.address.country || '';
 
             if (city && country) {
-                this.value = city;                    // Clean city name
+                this.value = city;
                 document.getElementById('id_country').value = country;
                 document.getElementById('id_latitude').value = selectedPlace.lat;
                 document.getElementById('id_longitude').value = selectedPlace.lon;
 
-                // === MINIMAL FIX: Hide the datalist suggestions ===
+                isValidSelection = true;           // Mark as valid
                 datalist.innerHTML = '';
                 places = [];
-                // Optional: remove focus to fully close dropdown
                 this.blur();
-            } else {
-                this.value = '';
-                document.getElementById('id_country').value = '';
-                document.getElementById('id_latitude').value = '';
-                document.getElementById('id_longitude').value = '';
-                this.focus();
             }
+        }
+    });
+
+    // Prevent form submission if city is not properly selected
+    document.querySelector('form').addEventListener('submit', function(e) {
+        var cityInput = document.getElementById('id_city');
+        if (!isValidSelection || !cityInput.value.trim()) {
+            e.preventDefault();                    // Stop form submission
+            alert("Please select a city from the suggestions.");
+            cityInput.focus();
         }
     });
 </script>
