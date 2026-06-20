@@ -257,9 +257,14 @@ Object.values(levelPoints).flat().forEach(function(p) {
 
 var kidsData = [
   {% for kid in kids %}
-    {id: {{ kid.id }}, name: "{{ kid.first_name|escapejs }}", birthday: "{{ kid.birthday }}"}{% if not forloop.last %},{% endif %}
+    {
+      id: {{ kid.id }},
+      name: "{{ kid.first_name|escapejs }}",
+      birthday: "{{ kid.birthday|date:'Y-m-d' }}"   <!-- FIXED: Force YYYY-MM-DD format -->
+    }{% if not forloop.last %},{% endif %}
   {% endfor %}
 ];
+
 var kidEvents = {
   {% for k_id, events in kid_events.items %}
     {{ k_id }}: [
@@ -416,11 +421,17 @@ function loadKidCalendar(kidID) {
         $('#edit-kid-id').val(kid.id);
         $('#edit-kid-name').val(kid.name);
         $('#calendar-kid-name').text(kid.name);
+
+        // FIXED: Set birthday reliably
+        if (kid.birthday) {
+            $('#edit-kid-birthday').val(kid.birthday);
+        }
+
         var ym = getCurrentYearMonth();
-        // Init current month/year
         kidCurrentYear = ym.year;
         kidCurrentMonth = ym.month;
         updateKidCalendar(ym.year, ym.month);
+
         if (courseLevels.length > 0) {
           $('#kid-journey').show();
           $('#journey-kid-name').text(kid.name);
@@ -428,9 +439,7 @@ function loadKidCalendar(kidID) {
         } else {
           $('#kid-journey').hide();
         }
-        setTimeout(function() {
-            $('#edit-kid-birthday').val(kid.birthday).trigger('change');
-        }, 50);
+
         $('.kid-avatar').removeClass('selected');
         $('.kid-avatar[data-kid-id="'+kidID+'"]').addClass('selected');
         $('.caregiver-avatar').removeClass('selected');
