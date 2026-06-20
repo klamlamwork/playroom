@@ -20,6 +20,21 @@
 <p>Phone: {{ user.userprofile.phone_number }}</p>
 <p>City/Town: {{ user.userprofile.city }}</p>
 
+<!-- NEW: Edit Location Section -->
+<h3>Edit Location</h3>
+<form method="post" id="location-edit-form">
+    {% csrf_token %}
+    <label>City/Town:
+        <input type="text" name="city" id="edit-city" value="{{ user.userprofile.city|default:'' }}" list="city-suggestions">
+    </label><br>
+    <input type="hidden" name="country" id="edit-country" value="{{ user.userprofile.country|default:'' }}">
+    <input type="hidden" name="latitude" id="edit-lat" value="{{ user.userprofile.latitude|default:'' }}">
+    <input type="hidden" name="longitude" id="edit-lon" value="{{ user.userprofile.longitude|default:'' }}">
+    <button type="submit">Update Location</button>
+</form>
+
+<datalist id="city-suggestions"></datalist>
+
 
 <h2>Caregivers:</h2>
 <div style="display: flex; gap: 24px; align-items: center; margin-top: 20px; margin-bottom: 32px;">
@@ -1134,6 +1149,71 @@ $(function() {
 
 $(window).on('resize', debounce(placePinsExact, 120));
 $(window).on('orientationchange', debounce(placePinsExact, 150));
+//for editing city 19,jun 2026
+// === LOCATION EDITING ===
+$('#location-edit-form').on('submit', function(e) {
+    e.preventDefault();
+    var cityVal = $('#edit-city').val().trim();
+    if (!cityVal) {
+        alert("Please select a city.");
+        return;
+    }
+    $.post("{% url 'update_location' %}", {   // We'll create this view next
+        city: cityVal,
+        country: $('#edit-country').val(),
+        latitude: $('#edit-lat').val(),
+        longitude: $('#edit-lon').val(),
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+    }, function(response) {
+        if (response.success) {
+            alert("Location updated successfully!");
+            location.reload();   // Refresh to show new city
+        } else {
+            alert(response.error || "Failed to update location.");
+        }
+    }).fail(function() {
+        alert("Connection error.");
+    });
+});
+
+// Reuse the same city suggestion logic (copy from signup if you want)
+var locationInput = document.getElementById('edit-city');
+var locationDatalist = document.getElementById('city-suggestions');
+var locPlaces = [];
+var locTimeout;
+
+function searchLocationCities(query) {
+    fetch(`/nominatim-proxy/?q=${encodeURIComponent(query)}`)
+    .then(r => r.json())
+    .then(data => {
+        locationDatalist.innerHTML = '';
+        locPlaces = data.filter(p => p.class === 'boundary' && p.type === 'administrative');
+        locPlaces.forEach(place => {
+            var opt = document.createElement('option');
+            opt.value = place.display_name;
+            locationDatalist.appendChild(opt);
+        });
+    });
+}
+
+locationInput.addEventListener('input', function() {
+    clearTimeout(locTimeout);
+    var q = this.value.trim();
+    if (q.length > 2) {
+        locTimeout = setTimeout(() => searchLocationCities(q), 300);
+    }
+});
+
+locationInput.addEventListener('change', function() {
+    var selected = locPlaces.find(p => p.display_name === this.value.trim());
+    if (selected) {
+        this.value = selected.name || selected.address.city || selected.address.town || '';
+        $('#edit-country').val(selected.address.country || '');
+        $('#edit-lat').val(selected.lat);
+        $('#edit-lon').val(selected.lon);
+    }
+});
+
 </script>
 
 {% endblock %}
