@@ -460,10 +460,40 @@ from django.contrib.auth.decorators import login_required
 def update_location(request):
     if request.method == 'POST':
         user_profile = request.user.userprofile
-        user_profile.city = request.POST.get('city')
-        user_profile.country = request.POST.get('country')
-        user_profile.latitude = request.POST.get('latitude') or None
-        user_profile.longitude = request.POST.get('longitude') or None
+        
+        city = request.POST.get('city')
+        country = request.POST.get('country')
+        lat = request.POST.get('latitude')
+        lon = request.POST.get('longitude')
+
+        user_profile.city = city
+        user_profile.country = country
+        
+        if lat and lon:
+            user_profile.latitude = float(lat)
+            user_profile.longitude = float(lon)
+            
+            # CRITICAL: Recalculate timezone from new coordinates
+            from timezonefinder import TimezoneFinder
+            tf = TimezoneFinder()
+            tz_name = tf.timezone_at(lng=float(lon), lat=float(lat))
+            if tz_name:
+                user_profile.timezone_name = tz_name
+        else:
+            user_profile.timezone_name = None  # Fallback
+
         user_profile.save()
-        return JsonResponse({'success': True})
+        
+        # Also update VendorProfile if user is a vendor
+        if hasattr(request.user, 'vendor_profile'):
+            vp = request.user.vendor_profile
+            vp.city = city
+            vp.country = country
+            vp.latitude = user_profile.latitude
+            vp.longitude = user_profile.longitude
+            vp.timezone_name = user_profile.timezone_name
+            vp.save()
+
+        return JsonResponse({'success': True, 'timezone': user_profile.timezone_name})
+    
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
