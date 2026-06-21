@@ -16,15 +16,15 @@
   </ul>
 {% endif %}
 
-<p>Name: {{ user.first_name }} {{ user.last_name }}</p>
-<p>Phone: {{ user.userprofile.phone_number }}</p>
-<p>City/Town: {{ user.userprofile.city }}</p>
-
+<p><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+<p><strong>Phone:</strong> {{ user.userprofile.phone_number }}</p>
+<p><strong>Location:</strong> {{ user.userprofile.city}}{% if user.userprofile.country %}, {{ user.userprofile.country }}{% endif %}</p>
+<p><strong>Current Timezone:</strong> {{ user.userprofile.timezone_name|default:"UTC" }}</p>
 <!-- NEW: Edit Location Section -->
 <h3>Edit Location</h3>
 <form method="post" id="location-edit-form">
     {% csrf_token %}
-    <label>City/Town:
+    <label>City/ Town:
         <input type="text" name="city" id="edit-city" value="{{ user.userprofile.city|default:'' }}" list="city-suggestions">
     </label><br>
     <input type="hidden" name="country" id="edit-country" value="{{ user.userprofile.country|default:'' }}">
