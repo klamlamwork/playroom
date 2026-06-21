@@ -1165,9 +1165,12 @@ $('#location-edit-form').on('submit', function(e) {
         longitude: $('#edit-lon').val(),
         csrfmiddlewaretoken: '{{ csrf_token }}'
     }, function(response) {
+        //if (response.success) {
+            //alert("Location updated successfully!");
+            //location.reload();   // Refresh to show new city
         if (response.success) {
-            alert("Location updated successfully!");
-            location.reload();   // Refresh to show new city
+            alert("Location updated successfully! New timezone: " + (response.timezone || 'UTC'));
+            location.reload();
         } else {
             alert(response.error || "Failed to update location.");
         }
