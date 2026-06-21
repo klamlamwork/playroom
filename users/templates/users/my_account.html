@@ -1150,36 +1150,33 @@ $(function() {
 $(window).on('resize', debounce(placePinsExact, 120));
 $(window).on('orientationchange', debounce(placePinsExact, 150));
 //for editing city 19,jun 2026
-// === LOCATION EDITING ===
+// === LOCATION EDIT JS ===
 $('#location-edit-form').on('submit', function(e) {
     e.preventDefault();
     var cityVal = $('#edit-city').val().trim();
     if (!cityVal) {
-        alert("Please select a city.");
+        alert("Please select a city from the suggestions.");
         return;
     }
-    $.post("{% url 'update_location' %}", {   // We'll create this view next
+    $.post("{% url 'update_location' %}", {
         city: cityVal,
         country: $('#edit-country').val(),
         latitude: $('#edit-lat').val(),
         longitude: $('#edit-lon').val(),
         csrfmiddlewaretoken: '{{ csrf_token }}'
     }, function(response) {
-        //if (response.success) {
-            //alert("Location updated successfully!");
-            //location.reload();   // Refresh to show new city
         if (response.success) {
             alert("Location updated successfully! New timezone: " + (response.timezone || 'UTC'));
             location.reload();
         } else {
-            alert(response.error || "Failed to update location.");
+            alert(response.error || "Failed to update.");
         }
     }).fail(function() {
-        alert("Connection error.");
+        alert("Connection error. Please try again.");
     });
 });
 
-// Reuse the same city suggestion logic (copy from signup if you want)
+// City suggestions for location edit
 var locationInput = document.getElementById('edit-city');
 var locationDatalist = document.getElementById('city-suggestions');
 var locPlaces = [];
@@ -1204,16 +1201,28 @@ locationInput.addEventListener('input', function() {
     var q = this.value.trim();
     if (q.length > 2) {
         locTimeout = setTimeout(() => searchLocationCities(q), 300);
+    } else {
+        locationDatalist.innerHTML = '';
     }
 });
 
 locationInput.addEventListener('change', function() {
-    var selected = locPlaces.find(p => p.display_name === this.value.trim());
+    var selectedValue = this.value.trim();
+    var selected = locPlaces.find(p => p.display_name === selectedValue);
+
     if (selected) {
-        this.value = selected.name || selected.address.city || selected.address.town || '';
-        $('#edit-country').val(selected.address.country || '');
+        var city = selected.name || selected.address.city || selected.address.town || selected.address.village || '';
+        var country = selected.address.country || '';
+
+        this.value = city;                    // Show clean city name
+        $('#edit-country').val(country);
         $('#edit-lat').val(selected.lat);
         $('#edit-lon').val(selected.lon);
+
+        // === FIX: Hide suggestions after selection ===
+        locationDatalist.innerHTML = '';
+        locPlaces = [];
+        this.blur();   // Force close dropdown
     }
 });
 
