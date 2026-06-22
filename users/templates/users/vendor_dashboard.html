@@ -5,6 +5,13 @@
 {% block title %}Dashboard | Mindset Playroom{% endblock %}
 {% block content %}
 
+<style>
+    /* Hide chatbot for vendors */
+    #chatbot-container, .chatbot-widget, [id*="chatbot"] {
+        display: none !important;
+    }
+</style>
+
 <h1>{{ message }}</h1>
 <p>Mindset Education Provider: <strong>{{ vendor.store_name }}</strong> </p>
 
