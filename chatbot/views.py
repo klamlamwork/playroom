@@ -518,3 +518,30 @@ def chat_view(request):
     else:
         context = {'message': message, 'options': [(opt['value'], opt['label']) for opt in options], 'step': step, 'caregivers': FamilyCaregiver.objects.filter(user=request.user), 'kids': request.user.kids.all()}
         return render(request, 'chatbot/chat.html', context)
+
+import os
+from google import genai
+from django.http import JsonResponse
+
+def gemini_test_view(request):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return JsonResponse({"error": "GEMINI_API_KEY is not set on Railway."}, status=500)
+
+    try:
+        # Initialize the official Gemini client
+        client = genai.Client(api_key=api_key)
+
+        # Call the free-tier model
+        response = client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents='In one short sentence, say hello from Railway.'
+        )
+
+        return JsonResponse({
+            "status": "success",
+            "ai_response": response.text
+        })
+        
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
