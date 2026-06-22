@@ -699,6 +699,31 @@ def chat_view(request):
             else:
                 message = 'No matching activities found.'
             options = [{'value': 'back', 'label': 'Back'}]
+
+        # ====================== AI PLAN FLOW - RESPONSE PREPARATION ======================
+        elif step == 'ai_when':
+            message = 'When are you planning for?'
+            options = [
+                {'value': 'today', 'label': 'Today'},
+                {'value': 'this_weekend', 'label': 'This weekend'},
+                {'value': 'back', 'label': 'Back'}
+            ]
+
+        elif step == 'ai_where':
+            message = 'Will you be mostly indoors or outdoors?'
+            options = [
+                {'value': 'indoor', 'label': 'Indoor'},
+                {'value': 'outdoor', 'label': 'Outdoor'},
+                {'value': 'back', 'label': 'Back'}
+            ]
+
+        elif step == 'ai_location':
+            message = 'Please tell me the location or park name (e.g. Victoria Park):'
+            input_type = 'text'
+
+        elif step == 'ai_results':
+            pass
+
     step = request.session['chat_step']
 
     if is_ajax:
