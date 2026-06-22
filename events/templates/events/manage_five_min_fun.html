@@ -2,84 +2,111 @@
 <!-- events/templates/events/manage_five_min_fun.html -->
 {% extends "base.html" %}
 
-{% block title %}Manage 5-Min Fun | Mindset Playroom{% endblock %}
+{% block title %}Manage 5-Min Fun | {{ five_min_fun.name }}{% endblock %}
 
 {% block content %}
-    <h1>Manage {{ five_min_fun.name }}</h1>
-    {% if messages %}
-        <ul>
-            {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-    
-        {% csrf_token %}
-        {{ form.name.label_tag }} {{ form.name }}
+<h1>Manage: {{ five_min_fun.name }}</h1>
 
-        Photo:
-        <button type="button" id="uploadWidget">Upload Photo</button>
+{% if messages %}
+    <ul>
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<a href="{% url 'vendor_dashboard' %}" class="btn" style="margin-bottom: 20px; display:inline-block; padding:10px 16px; background:#555; color:white; text-decoration:none; border-radius:5px;">
+    ← Back to Dashboard
+</a>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="form-group">
+        <label>{{ form.name.label }}</label>
+        {{ form.name }}
+    </div>
+
+    <div class="form-group">
+        <label>Photo:</label><br>
+        <button type="button" id="uploadWidget">Upload New Photo</button>
         {{ form.photo }}
+    </div>
 
-        Audio:
-        <button type="button" id="uploadAudioWidget">Upload Audio</button>
+    <div class="form-group">
+        <label>Audio:</label><br>
+        <button type="button" id="uploadAudioWidget">Upload New Audio</button>
         {{ form.audio }}
+    </div>
 
-        {{ form.instructions.label_tag }} {{ form.instructions }}
+    <div class="form-group">
+        <label>{{ form.instructions.label }}</label>
+        {{ form.instructions }}
+    </div>
 
-        {{ form.tags.label_tag }} {{ form.tags }}
+    <div class="form-group">
+        <label>{{ form.tags.label }}</label>
+        {{ form.tags }}
+    </div>
 
-        {{ form.age_groups.label_tag }} {{ form.age_groups }}
+    <div class="form-group">
+        <label>{{ form.age_groups.label }}</label>
+        {{ form.age_groups }}
+    </div>
 
-        {{ form.format_type.label_tag }} {{ form.format_type }}
+    <div class="form-group">
+        <label>{{ form.format_type.label }}</label>
+        {{ form.format_type }}
+    </div>
 
-        {{ form.place.label_tag }} {{ form.place }}
+    <div class="form-group">
+        <label>{{ form.place.label }}</label>
+        {{ form.place }}
+    </div>
 
-        {{ form.super_powers.label_tag }} {{ form.super_powers }}
+    <div class="form-group">
+        <label>{{ form.super_powers.label }}</label>
+        {{ form.super_powers }}
+    </div>
 
-        {{ form.routines.label_tag }} {{ form.routines }}
+    <div class="form-group">
+        <label>{{ form.routines.label }}</label>
+        {{ form.routines }}
+    </div>
 
-        <button type="submit">Update</button>
-    
-    Back to Dashboard
-    <script>
-        // Cloudinary Upload Widget Integration
-        document.addEventListener('DOMContentLoaded', function() {
-            const photoWidget = cloudinary.createUploadWidget({
-                cloudName: 'dvrbpkbr7',  // Replace with your Cloudinary cloud name
-                uploadPreset: 'playroom_upload',  // Replace with your unsigned upload preset name
-                sources: ['local', 'url', 'camera'],
-                multiple: false,
-                resourceType: 'image'
-            }, (error, result) => {
-                if (!error && result && result.event === "success") {
-                    const uploadedUrl = result.info.secure_url;
-                    document.getElementById('id_photo').value = uploadedUrl;
-                    console.log("Uploaded photo URL:", uploadedUrl);
-                }
-            });
+    <br>
+    <button type="submit" style="padding:12px 24px; font-size:1.1em;">Update 5-Min Fun</button>
+</form>
 
-            document.getElementById('uploadWidget').addEventListener('click', function() {
-                photoWidget.open();
-            }, false);
-
-            const audioWidget = cloudinary.createUploadWidget({
-                cloudName: 'dvrbpkbr7',  // Replace with your Cloudinary cloud name
-                uploadPreset: 'playroom_upload',  // Replace with your unsigned upload preset name
-                sources: ['local', 'url'],
-                multiple: false,
-                resourceType: 'video'  // Audio files are uploaded as 'video' resource type in Cloudinary
-            }, (error, result) => {
-                if (!error && result && result.event === "success") {
-                    const uploadedUrl = result.info.secure_url;
-                    document.getElementById('id_audio').value = uploadedUrl;
-                    console.log("Uploaded audio URL:", uploadedUrl);
-                }
-            });
-
-            document.getElementById('uploadAudioWidget').addEventListener('click', function() {
-                audioWidget.open();
-            }, false);
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cloudinary Photo Widget
+        const photoWidget = cloudinary.createUploadWidget({
+            cloudName: 'dvrbpkbr7',
+            uploadPreset: 'playroom_upload',
+            sources: ['local', 'url', 'camera'],
+            multiple: false,
+            resourceType: 'image'
+        }, (error, result) => {
+            if (!error && result && result.event === "success") {
+                document.getElementById('id_photo').value = result.info.secure_url;
+            }
         });
-    </script>
+        document.getElementById('uploadWidget').addEventListener('click', () => photoWidget.open());
+
+        // Cloudinary Audio Widget
+        const audioWidget = cloudinary.createUploadWidget({
+            cloudName: 'dvrbpkbr7',
+            uploadPreset: 'playroom_upload',
+            sources: ['local', 'url'],
+            multiple: false,
+            resourceType: 'video'
+        }, (error, result) => {
+            if (!error && result && result.event === "success") {
+                document.getElementById('id_audio').value = result.info.secure_url;
+            }
+        });
+        document.getElementById('uploadAudioWidget').addEventListener('click', () => audioWidget.open());
+    });
+</script>
 {% endblock %}
