@@ -16,7 +16,7 @@ import requests # Add this import for weather API calls
 import google.generativeai as genai
 import os
 
-# ====================== AI PLAN RECOMMENDER ======================
+# ====================== AI PLAN RECOMMENDER (NEW) ======================
 @login_required
 def ai_plan_recommend(request):
     if request.method != 'POST':
@@ -25,7 +25,7 @@ def ai_plan_recommend(request):
     try:
         data = json.loads(request.body)
         when = data.get('when', 'today')
-        where_type = data.get('where_type')   # indoor or outdoor
+        where_type = data.get('where_type')
         location = data.get('location', '')
 
         user = request.user
@@ -43,7 +43,7 @@ def ai_plan_recommend(request):
         - Name: {user.get_full_name() or user.username}
         - City: {profile.city or 'Unknown'}
         - Kids: {kids}
-        - Planning for: {when}
+        - Planning: {when}
         - Preference: {where_type}
         - Location: {location if where_type == 'outdoor' else 'Indoor'}
 
@@ -145,7 +145,7 @@ def chat_view(request):
             elif choice == 'plan_activities':
                 request.session['a2.5_substep'] = 'prefer'
                 request.session['chat_step'] = 'a2.5'
-            elif choice == 'plan_with_ai':   # ← NEW
+            elif choice == 'plan_with_ai':          # NEW - separate path
                 request.session['chat_step'] = 'ai_when'
             elif choice == 'back':
                 request.session['chat_step'] = 'q1'
@@ -227,6 +227,7 @@ def chat_view(request):
             step = request.session['chat_step']
 
         # ====================== NEW AI PLAN FLOW ======================
+# ====================== AI PLAN FLOW (Separate) ======================
         elif step == 'ai_when':
             choice = data.get('choice')
             request.session['ai_when'] = choice
@@ -259,14 +260,12 @@ def chat_view(request):
                 ai_result = ai_response.json()
                 if 'suggestions' in ai_result:
                     message = "Here are AI personalized suggestions for you:<br><br>"
-                    for s in ai_result['suggestions']:
-                        message += f"<strong>{s.get('name')}</strong><br>"
-                        message += f"{s.get('description')}<br>"
-                        message += f"<em>Learning: {s.get('learning')}</em><br><br>"
+                    for s in ai_result.get('suggestions', []):
+                        message += f"<strong>{s.get('name')}</strong><br>{s.get('description')}<br><em>Learn: {s.get('learning')}</em><br><br>"
                 else:
-                    message = "AI returned no suggestions."
+                    message = "No suggestions available."
             else:
-                message = "Sorry, AI is not available right now."
+                message = "Sorry, AI Coach is temporarily unavailable."
             options = [{'value': 'back', 'label': 'Back to Menu'}]
             request.session['chat_step'] = 'q2_kid' if any(p['type']=='kid' for p in request.session.get('selected_persons', [])) else 'q2_caregiver'
 
