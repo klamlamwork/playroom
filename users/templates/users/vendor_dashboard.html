@@ -6,9 +6,19 @@
 {% block content %}
 
 <style>
-    /* Hide chatbot for vendors */
-    #chatbot-container, .chatbot-widget, [id*="chatbot"] {
+    /* Completely hide chatbot and its toggle button for vendors */
+    .chatbot-toggler,
+    #chatbot-container,
+    .chatbot-widget,
+    [id*="chatbot"],
+    .chatbot {
         display: none !important;
+    }
+    
+    /* Extra safety - target the exact button */
+    button.chatbot-toggler {
+        display: none !important;
+        visibility: hidden !important;
     }
 </style>
 
