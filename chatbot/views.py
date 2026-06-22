@@ -14,6 +14,8 @@ import json
 import pytz
 import html  # Added for escaping
 import requests  # Add this import for weather API calls
+import google.generativeai as genai
+import os
 
 @login_required
 def chat_view(request):
@@ -92,6 +94,8 @@ def chat_view(request):
             elif choice == 'plan_activities':
                 request.session['a2.5_substep'] = 'prefer'
                 request.session['chat_step'] = 'a2.5'
+            elif choice == 'plan_with_ai':
+                request.session['chat_step'] = 'ai_when'
             elif choice == 'back':
                 request.session['chat_step'] = 'q1'
             step = request.session['chat_step']
@@ -318,6 +322,7 @@ def chat_view(request):
             {'value': 'set_routines', 'label': 'Set Routines'},
             {'value': 'see_routines', 'label': 'See Routines Today'},
             {'value': 'plan_activities', 'label': 'Plan activities'},
+            {'value': 'plan_with_ai', 'label': 'Plan with AI'},   # ← NEW
             {'value': 'back', 'label': 'Back'}
         ]
 
@@ -509,7 +514,50 @@ def chat_view(request):
             else:
                 message = 'No matching activities found.'
             options = [{'value': 'back', 'label': 'Back'}]
+        # ====================== AI PLAN FLOW ======================
+        elif step == 'ai_when':
+            choice = data.get('choice')
+            request.session['ai_when'] = choice
+            request.session['chat_step'] = 'ai_where'
+            step = 'ai_where'
 
+        elif step == 'ai_where':
+            choice = data.get('choice')
+            request.session['ai_where_type'] = choice
+            if choice == 'indoor':
+                request.session['chat_step'] = 'ai_results'
+            else:
+                request.session['chat_step'] = 'ai_location'
+            step = request.session['chat_step']
+
+        elif step == 'ai_location':
+            location = data.get('text') or data.get('choice')
+            request.session['ai_location'] = location
+            request.session['chat_step'] = 'ai_results'
+            step = 'ai_results'
+
+        elif step == 'ai_results':
+            ai_data = {
+                'when': request.session.get('ai_when', 'today'),
+                'where_type': request.session.get('ai_where_type'),
+                'location': request.session.get('ai_location', '')
+            }
+            # Call AI
+            ai_response = ai_plan_recommend(request)  # Reuse the function
+            if ai_response.status_code == 200:
+                ai_data = ai_response.json()
+                if 'suggestions' in ai_data:
+                    message = "Here are AI suggestions for you:<br><br>"
+                    for s in ai_data['suggestions']:
+                        message += f"<strong>{s.get('name')}</strong><br>"
+                        message += f"{s.get('description')}<br>"
+                        message += f"<em>Learning: {s.get('learning')}</em><br><br>"
+                else:
+                    message = "AI returned no suggestions."
+            else:
+                message = "Sorry, AI is not available right now."
+            options = [{'value': 'back', 'label': 'Back to Menu'}]
+            request.session['chat_step'] = 'q2_kid' if any(p['type']=='kid' for p in request.session.get('selected_persons', [])) else 'q2_caregiver'
     if is_ajax:
         resp = {'message': message, 'options': options, 'step': step, 'caregivers': caregivers, 'kids': kids}
         if input_type:
@@ -543,5 +591,63 @@ def gemini_test_view(request):
             "ai_response": response.text
         })
         
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+# ====================== AI PLAN RECOMMENDER (NEW) ======================
+@login_required
+def ai_plan_recommend(request):
+    if request.method != 'POST':
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        when = data.get('when', 'today')
+        where_type = data.get('where_type')   # indoor or outdoor
+        location = data.get('location', '')
+
+        user = request.user
+        profile = user.userprofile
+        kids = list(user.kids.all().values('first_name', 'birthday'))
+
+        genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+
+        model = genai.GenerativeModel('gemini-2.5-flash')
+
+        prompt = f"""
+        You are a friendly AI Coach for Mindset Playroom.
+
+        User Context:
+        - Name: {user.get_full_name() or user.username}
+        - City: {profile.city or 'Unknown'}
+        - Kids: {kids}
+        - Planning: {when}
+        - Preference: {where_type}
+        - Location: {location if where_type == 'outdoor' else 'Indoor'}
+
+        Suggest 3-4 suitable activities.
+        For each activity:
+        - Name
+        - Short description (how to do it)
+        - What the child can learn (mindset, skills, knowledge)
+
+        Return ONLY valid JSON:
+        {{"suggestions": [{{"name": "...", "description": "...", "learning": "..."}}]}}
+        """
+
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+
+        if '```json' in text:
+            text = text.split('```json')[1].split('```')[0].strip()
+
+        try:
+            result = json.loads(text)
+        except:
+            result = {"suggestions": [{"name": "AI Suggestion", "description": text[:400], "learning": "Personalized for your family"}]}
+
+        return JsonResponse(result)
+
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
