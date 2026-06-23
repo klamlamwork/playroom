@@ -518,3 +518,27 @@ def chat_view(request):
     else:
         context = {'message': message, 'options': [(opt['value'], opt['label']) for opt in options], 'step': step, 'caregivers': FamilyCaregiver.objects.filter(user=request.user), 'kids': request.user.kids.all()}
         return render(request, 'chatbot/chat.html', context)
+
+
+# ====================== SIMPLE GEMINI TEST ======================
+@login_required
+def gemini_test(request):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return JsonResponse({"error": "GEMINI_API_KEY is not set in Railway Environment Variables"}, status=500)
+
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        response = model.generate_content("Say hello from Mindset Playroom in one short sentence.")
+        
+        return JsonResponse({
+            "status": "success",
+            "message": response.text.strip()
+        })
+    except Exception as e:
+        return JsonResponse({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
