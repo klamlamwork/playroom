@@ -5,5 +5,6 @@ from . import views
 
 urlpatterns = [
     path('chat/', views.chat_view, name='chatbot'),
+    path('gemini-simple-test/', views_test.gemini_simple_test, name='gemini_simple_test'),
     #path('ai-plan/', views.ai_plan_recommend, name='ai_plan_recommend'),
 ]
