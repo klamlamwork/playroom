@@ -2,6 +2,7 @@
 #chatbot/urls.py
 from django.urls import path
 from . import views
+from . import views_test   # ← Add this line
 
 urlpatterns = [
     path('chat/', views.chat_view, name='chatbot'),
